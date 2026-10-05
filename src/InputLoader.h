@@ -14,8 +14,8 @@
 class InputLoader {
 public:
     static std::pair<Map, std::vector<Scenario>> loadInput(
-        std::string mapFileName,
-        std::string scenarioFileName
+        const std::string& mapFileName,
+        const std::string& scenarioFileName
     );
 };
 

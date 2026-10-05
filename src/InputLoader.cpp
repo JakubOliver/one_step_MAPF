@@ -6,7 +6,10 @@
 
 #include "csv.hpp"
 
-std::pair<Map, std::vector<Scenario>> InputLoader::loadInput(std::string mapFileName, std::string scenarioFileName) {
+std::pair<Map, std::vector<Scenario>> InputLoader::loadInput(
+    const std::string& mapFileName,
+    const std::string& scenarioFileName
+) {
     Map map(63, 161, std::map<std::pair<int, int>, bool>{}); //TODO: from file
 
     csv::CSVFormat format;
