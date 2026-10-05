@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
 
     auto [map, scenarios] = InputLoader::loadInput(map_file, scenario_file);
 
+    std::cout << map << std::endl;
+
     for (auto& scenario : scenarios) {
         std::cout << scenario << std::endl;
     }

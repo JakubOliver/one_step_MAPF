@@ -6,12 +6,23 @@
 #define MAPF_MAP_H
 
 #include <map>
+#include <iostream>
+#include <string>
 
 class Map {
 public:
-    const int height;
-    const int width;
-    const std::map<std::pair<int, int>, bool> map;
+    const std::string type;
+    const std::size_t height;
+    const std::size_t width;
+    const std::map<std::pair<std::size_t, std::size_t>, bool> map;
+
+    void print(std::ostream& os) const {
+        os << "Map: " << type << " " << height << " " << width;
+    }
+
+    inline friend std::ostream& operator<<(std::ostream& os, const Map& map) {
+        map.print(os); return os;
+    }
 };
 
 
