@@ -9,14 +9,14 @@
 
 class Scenario {
 public:
-    const int bucket;
+    const std::size_t bucket;
     const std::string map;
-    const int width;
-    const int height;
-    const int startX;
-    const int startY;
-    const int goalX;
-    const int goalY;
+    const std::size_t width;
+    const std::size_t height;
+    const std::size_t startX;
+    const std::size_t startY;
+    const std::size_t goalX;
+    const std::size_t goalY;
     const double optimalDistance;
 
     void print(std::ostream& os) const {

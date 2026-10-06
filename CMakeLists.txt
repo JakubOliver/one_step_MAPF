@@ -31,7 +31,11 @@ add_executable(MAPF ${SRC_ALL}
         src/Scenario.cpp
         src/Scenario.h
         src/Map.cpp
-        src/Map.h)
+        src/Map.h
+        src/algorithms/PriorityPlaning.cpp
+        src/algorithms/PriorityPlaning.h
+        src/Agent.cpp
+        src/Agent.h)
 
 target_link_libraries(
         MAPF

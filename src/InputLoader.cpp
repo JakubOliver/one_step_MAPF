@@ -74,14 +74,14 @@ std::vector<Scenario> InputLoader::loadScenarios(const std::string& fileName) {
         }
 
         scenarios.push_back({
-            .bucket = row[0].get<int>(),
+            .bucket = row[0].get<std::size_t>(),
             .map = row[1].get<std::string>(),
-            .width = row[2].get<int>(),
-            .height = row[3].get<int>(),
-            .startX = row[4].get<int>(),
-            .startY = row[5].get<int>(),
-            .goalX = row[6].get<int>(),
-            .goalY = row[7].get<int>(),
+            .width = row[2].get<std::size_t>(),
+            .height = row[3].get<std::size_t>(),
+            .startX = row[4].get<std::size_t>(),
+            .startY = row[5].get<std::size_t>(),
+            .goalX = row[6].get<std::size_t>(),
+            .goalY = row[7].get<std::size_t>(),
             .optimalDistance = row[8].get<double>()
         });
     }

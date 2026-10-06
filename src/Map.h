@@ -9,12 +9,17 @@
 #include <iostream>
 #include <string>
 
+//TODO: add precomputation for all nodes
+
 class Map {
 public:
     const std::string type;
     const std::size_t height;
     const std::size_t width;
-    const std::map<std::pair<std::size_t, std::size_t>, bool> map;
+    const std::map<std::pair<std::size_t, std::size_t>, bool> map; // TODO: change to set
+
+    bool isBlocked(std::size_t x, std::size_t y) const;
+    bool isBlocked(std::pair<std::size_t, std::size_t> pos) const;
 
     void print(std::ostream& os) const {
         os << "Map: " << type << " " << height << " " << width;
