@@ -8,12 +8,29 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
+find_package(PkgConfig REQUIRED)
+
+# Cmake is combined from the original MAPF-visualizer and openFrameworks repo Makes and Cmakes
+# and is enriched with few libraries used in this project
+
+# TODO: check support for Windows, Mac and different Linux distros and DE
+
+
+# ============================================================
+# argparse
+# ============================================================
+
 FetchContent_Declare(
         argparse
         GIT_REPOSITORY https://github.com/p-ranav/argparse.git
 )
 
 FetchContent_MakeAvailable(argparse)
+
+
+# ============================================================
+# csv-parser
+# ============================================================
 
 FetchContent_Declare(
         csv_parser
@@ -23,23 +40,229 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(csv_parser)
 
-file(GLOB_RECURSE SRC_ALL CONFIGURE_DEPENDS src/*.cpp)
 
-add_executable(MAPF ${SRC_ALL}
-        src/InputLoader.cpp
-        src/InputLoader.h
-        src/Scenario.cpp
-        src/Scenario.h
-        src/Map.cpp
-        src/Map.h
-        src/algorithms/PriorityPlaning.cpp
-        src/algorithms/PriorityPlaning.h
-        src/Agent.cpp
-        src/Agent.h)
+# ============================================================
+# mapf-visualizer / openFrameworks
+# ============================================================
+
+set(MAPF_VISUALIZER_DIR
+        ${CMAKE_SOURCE_DIR}/external/mapf-visualizer
+)
+
+set(OF_ROOT
+        ${MAPF_VISUALIZER_DIR}/third_party/openFrameworks
+)
+
+
+# ------------------------------------------------------------
+# openFrameworks system dependencies
+# ------------------------------------------------------------
+
+pkg_check_modules(
+        OF_SYSTEM_DEPS
+        REQUIRED
+        IMPORTED_TARGET
+
+        cairo
+        zlib
+
+        gstreamer-app-1.0
+        gstreamer-1.0
+        gstreamer-video-1.0
+        gstreamer-base-1.0
+
+        libudev
+
+        freetype2
+        fontconfig
+
+        sndfile
+        openal
+
+        libcurl
+
+        glfw3
+        rtaudio
+
+        libpulse-simple
+        alsa
+
+        gl
+        glu
+        glew
+
+        gtk+-3.0
+
+        libmpg123
+)
+
+
+# ------------------------------------------------------------
+# ofxGui
+# ------------------------------------------------------------
+
+file(GLOB OFXGUI_SOURCES
+        CONFIGURE_DEPENDS
+        ${OF_ROOT}/addons/ofxGui/src/*.cpp
+)
+
+
+# ------------------------------------------------------------
+# mapf-visualizer library
+# ------------------------------------------------------------
+
+add_library(
+        mapf_visualizer
+
+        ${MAPF_VISUALIZER_DIR}/src/Visualizer.cpp
+        ${MAPF_VISUALIZER_DIR}/src/ofApp.cpp
+        ${MAPF_VISUALIZER_DIR}/src/graph.cpp
+
+        ${OFXGUI_SOURCES}
+)
+
+
+# ------------------------------------------------------------
+# Include directories
+# ------------------------------------------------------------
+
+target_include_directories(
+        mapf_visualizer
+        PUBLIC
+
+        # mapf-visualizer
+        ${MAPF_VISUALIZER_DIR}/src
+        ${MAPF_VISUALIZER_DIR}/include
+
+        # openFrameworks core
+        ${OF_ROOT}/libs/openFrameworks
+        ${OF_ROOT}/libs/openFrameworks/3d
+        ${OF_ROOT}/libs/openFrameworks/app
+        ${OF_ROOT}/libs/openFrameworks/communication
+        ${OF_ROOT}/libs/openFrameworks/events
+        ${OF_ROOT}/libs/openFrameworks/gl
+        ${OF_ROOT}/libs/openFrameworks/graphics
+        ${OF_ROOT}/libs/openFrameworks/math
+        ${OF_ROOT}/libs/openFrameworks/sound
+        ${OF_ROOT}/libs/openFrameworks/types
+        ${OF_ROOT}/libs/openFrameworks/utils
+        ${OF_ROOT}/libs/openFrameworks/video
+
+        # bundled openFrameworks dependencies
+        ${OF_ROOT}/libs/fmod/include
+        ${OF_ROOT}/libs/glm/include
+        ${OF_ROOT}/libs/json/include
+        ${OF_ROOT}/libs/kiss/include
+        ${OF_ROOT}/libs/tess2/include
+        ${OF_ROOT}/libs/utf8/include
+
+        # addons
+        ${OF_ROOT}/addons/ofxGui/src
+)
+
+
+# ------------------------------------------------------------
+# Compile definitions used by openFrameworks on Linux
+# ------------------------------------------------------------
+
+target_compile_definitions(
+        mapf_visualizer
+        PUBLIC
+
+        GCC_HAS_REGEX
+        OF_USING_GTK
+        OF_USING_MPG123
+)
+
+
+# ------------------------------------------------------------
+# openFrameworks + bundled + Linux libraries
+# ------------------------------------------------------------
+
+target_link_libraries(
+        mapf_visualizer
+        PUBLIC
+
+        # openFrameworks core
+        ${OF_ROOT}/libs/openFrameworksCompiled/lib/linux64/libopenFrameworks.a
+
+        # bundled static libraries used by openFrameworks
+        ${OF_ROOT}/libs/kiss/lib/linux64/libkiss.a
+        ${OF_ROOT}/libs/tess2/lib/linux64/libtess2.a
+
+        # pkg-config dependencies
+        PkgConfig::OF_SYSTEM_DEPS
+
+        # Linux platform libraries
+        glut
+
+        X11
+        Xrandr
+        Xxf86vm
+        Xi
+        Xcursor
+        Xinerama
+
+        dl
+        pthread
+
+        freeimage
+        pugixml
+        uriparser
+)
+
+
+# ============================================================
+# MAPF
+# ============================================================
+
+file(
+        GLOB_RECURSE
+        SRC_ALL
+        CONFIGURE_DEPENDS
+        src/*.cpp
+)
+
+add_executable(
+        MAPF
+        ${SRC_ALL}
+)
 
 target_link_libraries(
         MAPF
         PRIVATE
+
         argparse
         csv
+        mapf_visualizer
 )
+
+
+# ============================================================
+# Tests
+# ============================================================
+
+#include(CTest)
+
+#if(BUILD_TESTING)
+#    add_executable(
+#            priority_planning_tests
+#            tests/PriorityPlaningTests.cpp
+#            src/Agent.cpp
+#            src/InputLoader.cpp
+#            src/Map.cpp
+#            src/Scenario.cpp
+#            src/algorithms/PriorityPlaning.cpp
+#    )
+#
+#    target_link_libraries(
+#            priority_planning_tests
+#            PRIVATE
+#            csv
+#    )
+#
+#    add_test(
+#            NAME priority_planning_tests
+#            COMMAND priority_planning_tests
+#    )
+#endif()

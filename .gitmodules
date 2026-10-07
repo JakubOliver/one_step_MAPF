@@ -1,0 +1,3 @@
+[submodule "external/mapf-visualizer"]
+	path = external/mapf-visualizer
+	url = https://github.com/JakubOliver/mapf-visualizer

@@ -12,7 +12,7 @@ void Exporter::export_agents(const std::vector<Agent> &agents) {
         maxPathSize = std::max(maxPathSize, agent.getLength());
     }
 
-    std::ofstream file("agents.csv");
+    std::ofstream file(AGENT_PATH_FILE_NAME);
 
     for (std::size_t i = 0; i < maxPathSize; i++) {
         file << i << ":";
