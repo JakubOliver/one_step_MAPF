@@ -6,6 +6,7 @@
 
 #include "csv.hpp"
 #include <fstream>
+#include <limits>
 
 std::pair<Map, std::vector<Scenario>> InputLoader::loadInput(
     const std::string& mapFileName,
@@ -31,22 +32,29 @@ Map InputLoader::loadMap(const std::string& fileName) {
     mapFile >> heightKey >> height;
     mapFile >> widthKey >> width;
     mapFile >> mapKey;
+    mapFile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     //TOOD: add validation
 
     std::map<std::pair<std::size_t, std::size_t>, bool> mapData;
     std::string line;
     std::size_t row = 0;
-    while (getline(mapFile, line)) {
-        for (std::size_t column = 0; column < line.length(); column++) {
+    while (row < height && getline(mapFile, line)) {
+        for (
+            std::size_t column = 0;
+            column < width && column < line.length();
+            column++
+        ) {
             char c = line[column];
 
             if (c == 'T') {
-                mapData[std::make_pair(row, column)] = true;
+                mapData[std::make_pair(column, row)] = true;
             } else {
-                mapData[std::make_pair(row, column)] = false;
+                mapData[std::make_pair(column, row)] = false;
             }
         }
+
+        row++;
     }
 
     return {

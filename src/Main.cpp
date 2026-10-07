@@ -7,6 +7,8 @@
 #include "InputLoader.h"
 #include <argparse/argparse.hpp>
 
+#include "algorithms/PriorityPlaning.h"
+
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("MAPF");
 
@@ -30,11 +32,7 @@ int main(int argc, char** argv) {
 
     auto [map, scenarios] = InputLoader::loadInput(map_file, scenario_file);
 
-    std::cout << map << std::endl;
-
-    for (auto& scenario : scenarios) {
-        std::cout << scenario << std::endl;
-    }
+    PriorityPlaning().resolve(map, scenarios);
 
     return 0;
 }

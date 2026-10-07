@@ -4,7 +4,25 @@
 
 #include "Agent.h"
 
+#include <stdexcept>
+#include <utility>
+
+Agent::Agent(std::vector<std::pair<std::size_t, std::size_t>> path)
+    : path(std::move(path)) {
+    if (this->path.empty()) {
+        throw std::invalid_argument("An agent path cannot be empty");
+    }
+}
+
+const std::vector<std::pair<std::size_t, std::size_t>>& Agent::getPath() const {
+    return path;
+}
+
 std::pair<std::size_t, std::size_t> Agent::getPathAtTime(std::size_t time) const {
+    if (path.empty()) {
+        throw std::out_of_range("An agent with an empty path has no position");
+    }
+
     if (time >= path.size()) {
         return path.at(path.size() - 1);
     }
