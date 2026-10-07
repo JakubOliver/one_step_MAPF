@@ -7,6 +7,7 @@
 #include "InputLoader.h"
 #include <argparse/argparse.hpp>
 
+#include "Exporter.h"
 #include "algorithms/PriorityPlaning.h"
 
 int main(int argc, char** argv) {
@@ -32,7 +33,9 @@ int main(int argc, char** argv) {
 
     auto [map, scenarios] = InputLoader::loadInput(map_file, scenario_file);
 
-    PriorityPlaning().resolve(map, scenarios);
+    auto agents = PriorityPlaning().resolve(map, scenarios);
+
+    Exporter::export_agents(agents);
 
     return 0;
 }

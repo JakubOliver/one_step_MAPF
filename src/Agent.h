@@ -17,6 +17,8 @@ public:
     Agent() = default;
     explicit Agent(std::vector<std::pair<std::size_t, std::size_t>> path);
 
+    std::size_t getLength() const;
+
     const std::vector<std::pair<std::size_t, std::size_t>>& getPath() const;
     std::pair<std::size_t, std::size_t> getPathAtTime(std::size_t time) const;
 };

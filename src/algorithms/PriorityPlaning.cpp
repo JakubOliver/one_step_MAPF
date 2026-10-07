@@ -111,6 +111,8 @@ std::vector<Agent> PriorityPlaning::resolve(
     std::vector<Agent> agents;
     agents.reserve(scenarios.size());
 
+    //TODO: randomize priority
+
     for (const auto& scenario : scenarios) {
         std::cout << "Processing: " << scenario << std::endl;
 

@@ -29,3 +29,7 @@ std::pair<std::size_t, std::size_t> Agent::getPathAtTime(std::size_t time) const
 
     return path.at(time);
 }
+
+std::size_t Agent::getLength() const {
+    return path.size();
+}
