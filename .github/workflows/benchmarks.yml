@@ -292,7 +292,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: >-
-            benchmark-${{ matrix.algorithm }}-${{ matrix.case.map }}-${{ matrix.case.scenario }}-${{ github.run_id }}-${{ github.run_attempt }}
+            benchmark-result-${{ matrix.algorithm }}-${{ matrix.case.map }}-${{ matrix.case.scenario }}-${{ github.run_id }}-${{ github.run_attempt }}
 
           path: output/*
           if-no-files-found: error
@@ -325,7 +325,7 @@ jobs:
       - name: Download all benchmark results
         uses: actions/download-artifact@v8
         with:
-          pattern: benchmark-*
+          pattern: benchmark-result-*
           path: release-assets
           merge-multiple: true
 
