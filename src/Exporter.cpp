@@ -6,13 +6,13 @@
 
 #include <fstream>
 
-void Exporter::export_agents(const std::vector<Agent> &agents) {
+void Exporter::export_agents(const std::vector<Agent> &agents, const std::string& outputFile) {
     std::size_t maxPathSize = 0;
     for (const Agent& agent : agents) {
         maxPathSize = std::max(maxPathSize, agent.getLength());
     }
 
-    std::ofstream file(AGENT_PATH_FILE_NAME);
+    std::ofstream file(outputFile);
 
     for (std::size_t i = 0; i < maxPathSize; i++) {
         file << i << ":";

@@ -24,6 +24,8 @@ int main(int argc, char** argv) {
     program.add_argument("--visualize")
         .default_value(false)
         .implicit_value(true);
+    program.add_argument("--output")
+        .default_value(AGENT_PATH_FILE_NAME);
 
     try {
         program.parse_args(argc, argv);
@@ -49,15 +51,14 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Exporter::export_agents(agents);
+    auto output_file = program.get<std::string>("--output");
+    Exporter::export_agents(agents, output_file);
 
     if (program.get<bool>("--visualize")) {
-        std::string AGENT_PATH_FILE_NAME_FOR_VISUALIZER = AGENT_PATH_FILE_NAME;
-
         char* visualizer_argv[] = {
             "mapf-visualizer",
             map_file.data(),
-            AGENT_PATH_FILE_NAME_FOR_VISUALIZER.data()
+            output_file.data()
         };
 
         //TODO: remove constant
