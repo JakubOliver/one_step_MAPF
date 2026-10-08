@@ -119,8 +119,14 @@ jobs:
           set -euo pipefail
 
           make \
+            -C external/mapf-visualizer/third_party/openFrameworks/libs/openFrameworksCompiled/project \
+            -j2 \
+            Release
+
+          make \
             -C external/mapf-visualizer \
-            -j2
+            -j2 \
+            ReleaseABI
 
 
       - name: Build MAPF
