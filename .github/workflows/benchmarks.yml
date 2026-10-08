@@ -31,7 +31,8 @@ jobs:
   # ==========================================================
   prepare:
     name: Prepare benchmark data
-    runs-on: ubuntu-latest
+    # TODO: Switch to ubuntu-24.04 after updating the nested openFrameworks submodule.
+    runs-on: &runner_os ubuntu-22.04
 
     outputs:
       cases: ${{ steps.matrix.outputs.cases }}
@@ -85,7 +86,7 @@ jobs:
   # ==========================================================
   build:
     name: Build MAPF
-    runs-on: ubuntu-latest
+    runs-on: *runner_os
 
     steps:
       - name: Check out repository
@@ -153,7 +154,7 @@ jobs:
       - prepare
       - build
 
-    runs-on: ubuntu-latest
+    runs-on: *runner_os
 
     timeout-minutes: 300
 
@@ -298,7 +299,7 @@ jobs:
       needs.prepare.result == 'success' &&
       needs.build.result == 'success'
 
-    runs-on: ubuntu-latest
+    runs-on: *runner_os
 
     permissions:
       contents: write
