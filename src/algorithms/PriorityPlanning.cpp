@@ -2,7 +2,7 @@
 // Created by jakub on 10/6/26.
 //
 
-#include "PriorityPlaning.h"
+#include "PriorityPlanning.h"
 
 #include <algorithm>
 #include <limits>
@@ -99,7 +99,7 @@ std::runtime_error invalidPositionError(
     return std::runtime_error(message.str());
 }
 
-std::vector<Agent> PriorityPlaning::resolve(
+std::vector<Agent> PriorityPlanning::resolve(
     const Map& map,
     const std::vector<Scenario>& scenarios
 ) {
@@ -124,7 +124,7 @@ std::vector<Agent> PriorityPlaning::resolve(
     return agents;
 }
 
-Agent PriorityPlaning::AStar(const Map& map, const Scenario& scenario) const {
+Agent PriorityPlanning::AStar(const Map& map, const Scenario& scenario) const {
     if (map.width == 0 || map.height == 0) {
         throw std::runtime_error("A* cannot search a map with a zero dimension");
     }
@@ -238,7 +238,7 @@ Agent PriorityPlaning::AStar(const Map& map, const Scenario& scenario) const {
     throw std::runtime_error(message.str());
 }
 
-void PriorityPlaning::reservePath(const Agent& agent) {
+void PriorityPlanning::reservePath(const Agent& agent) {
     const auto& path = agent.getPath();
 
     for (std::size_t time = 0; time < path.size(); time++) {
@@ -268,7 +268,7 @@ void PriorityPlaning::reservePath(const Agent& agent) {
     finalPositions.insert_or_assign(path.back(), path.size() - 1);
 }
 
-bool PriorityPlaning::hasVertexConflict(
+bool PriorityPlanning::hasVertexConflict(
     std::size_t x,
     std::size_t y,
     std::size_t time
@@ -289,7 +289,7 @@ bool PriorityPlaning::hasVertexConflict(
         && finalPosition->second <= time;
 }
 
-bool PriorityPlaning::hasTransitionConflict(
+bool PriorityPlanning::hasTransitionConflict(
     Position from,
     Position to,
     std::size_t arrivalTime
@@ -308,7 +308,7 @@ bool PriorityPlaning::hasTransitionConflict(
         && reservedState->previousY == to.second;
 }
 
-bool PriorityPlaning::canOccupyGoalFrom(
+bool PriorityPlanning::canOccupyGoalFrom(
     std::size_t x,
     std::size_t y,
     std::size_t time

@@ -8,7 +8,7 @@
 #include <argparse/argparse.hpp>
 
 #include "Exporter.h"
-#include "algorithms/PriorityPlaning.h"
+#include "algorithms/PriorityPlanning.h"
 
 #include "../external/mapf-visualizer/src/Visualizer.h"
 
@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     program.add_argument("scenario")
         .help("path to the scenario file");
     program.add_argument("--algorithm")
-        .default_value("PriorityPlaning");
+        .default_value("PriorityPlanning");
     program.add_argument("--visualize")
         .default_value(false)
         .implicit_value(true);
@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
     auto algorithm_name = program.get<std::string>("--algorithm");
 
     std::vector<Agent> agents;
-    if (algorithm_name == "PriorityPlaning") {
-        agents = PriorityPlaning().resolve(map, scenarios);
+    if (algorithm_name == "PriorityPlanning") {
+        agents = PriorityPlanning().resolve(map, scenarios);
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;

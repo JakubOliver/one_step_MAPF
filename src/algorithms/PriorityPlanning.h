@@ -28,7 +28,7 @@ struct PriorityPlaningState {
     }
 };
 
-class PriorityPlaning {
+class PriorityPlanning {
 private:
     std::set<PriorityPlaningState> states;
     std::map<std::pair<std::size_t, std::size_t>, std::size_t> finalPositions;
@@ -55,7 +55,7 @@ private:
     ) const;
 
 public:
-    PriorityPlaning() = default;
+    PriorityPlanning() = default;
 
     std::vector<Agent> resolve(
         const Map& map,
