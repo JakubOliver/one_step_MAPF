@@ -100,6 +100,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libmpg123-dev \
+            libunwind-dev
+
           sudo bash \
             external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
             -y
@@ -179,6 +184,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libmpg123-dev \
+            libunwind-dev
 
           sudo bash \
             external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
