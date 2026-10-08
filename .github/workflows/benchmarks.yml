@@ -1,0 +1,339 @@
+name: Benchmarks
+
+run-name: Benchmarks for ${{ github.ref_name }} by @${{ github.actor }}
+#TODO: Create a way how to compile without openFrameworks, because we do not need visualization for benchmarks. 
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario_count:
+        description: "Number of scenarios per map and scenario type"
+        required: false
+        default: "5"
+
+      scenario_timeout_minutes:
+        description: "Timeout for one algorithm run"
+        required: false
+        default: "10"
+
+  schedule:
+    # Every day at 02:00 UTC
+    - cron: "0 2 * * *"
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  # ==========================================================
+  # Download benchmark data and create the dynamic matrix
+  # ==========================================================
+  prepare:
+    name: Prepare benchmark data
+    runs-on: ubuntu-latest
+
+    outputs:
+      cases: ${{ steps.matrix.outputs.cases }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+
+      - name: Download MovingAI benchmarks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p downloads extracted
+
+          for archive in map scen-even scen-random; do
+            curl -fL \
+              "https://movingai.com/benchmarks/mapf/mapf-${archive}.zip" \
+              -o "downloads/${archive}.zip"
+
+            unzip -q \
+              "downloads/${archive}.zip" \
+              -d extracted
+          done
+
+
+      - name: Select benchmark cases
+        id: matrix
+        shell: bash
+        env:
+          SCENARIO_COUNT: ${{ inputs.scenario_count || '5' }}
+        run: |
+          set -euo pipefail
+
+          python3 .github/scripts/select_benchmark_cases.py \
+            --scenario-count "${SCENARIO_COUNT}" \
+            --github-output "${GITHUB_OUTPUT}"
+
+
+      - name: Upload benchmark input data
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-input-data-${{ github.run_id }}-${{ github.run_attempt }}
+          path: benchmark-data/
+          retention-days: 1
+
+
+  # ==========================================================
+  # Build MAPF once for all benchmark jobs
+  # ==========================================================
+  build:
+    name: Build MAPF
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+
+      - name: Install openFrameworks dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo bash \
+            external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
+            -y
+
+          bash \
+            external/mapf-visualizer/third_party/openFrameworks/scripts/linux/download_libs.sh
+
+
+      - name: Build openFrameworks and mapf-visualizer
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          make \
+            -C external/mapf-visualizer \
+            -j2
+
+
+      - name: Build MAPF
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cmake \
+            -S . \
+            -B build
+
+          cmake \
+            --build build \
+            -j2
+
+
+      - name: Upload MAPF executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: mapf-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/MAPF
+          if-no-files-found: error
+          retention-days: 1
+
+
+  # ==========================================================
+  # Run one algorithm on one scenario
+  # ==========================================================
+  benchmark:
+    name: >-
+      ${{ matrix.algorithm }} |
+      ${{ matrix.case.map }} |
+      ${{ matrix.case.scenario }}
+
+    needs:
+      - prepare
+      - build
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 300
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        algorithm:
+          - "PriorityPlanning"
+
+        case: ${{ fromJSON(needs.prepare.outputs.cases) }}
+
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+
+      - name: Install openFrameworks runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo bash \
+            external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
+            -y
+
+
+      - name: Download MAPF executable
+        uses: actions/download-artifact@v8
+        with:
+          name: mapf-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build
+
+
+      - name: Make MAPF executable
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          chmod +x build/MAPF
+
+
+      # ------------------------------------------------------
+      # Download selected MovingAI input data
+      # ------------------------------------------------------
+      - name: Download benchmark input data
+        uses: actions/download-artifact@v8
+        with:
+          name: benchmark-input-data-${{ github.run_id }}-${{ github.run_attempt }}
+          path: benchmark-data
+
+
+      # ------------------------------------------------------
+      # Run benchmark
+      # ------------------------------------------------------
+      - name: Run benchmark
+        shell: bash
+        env:
+          ALGORITHM: ${{ matrix.algorithm }}
+
+          MAP_NAME: ${{ matrix.case.map }}
+          MAP_FILE: benchmark-data/${{ matrix.case.map_file }}
+
+          SCENARIO_TYPE: ${{ matrix.case.scenario_type }}
+          SCENARIO_NAME: ${{ matrix.case.scenario }}
+          SCENARIO_FILE: benchmark-data/${{ matrix.case.scenario_file }}
+
+          SCENARIO_TIMEOUT_MINUTES: ${{ inputs.scenario_timeout_minutes || '10' }}
+
+        run: |
+          set -u
+
+          mkdir -p output
+
+          DATE="$(date -u +'%Y-%m-%d')"
+
+          OUTPUT_FILE="output/${ALGORITHM}__${MAP_NAME}__${SCENARIO_TYPE}__${SCENARIO_NAME}__${DATE}__run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+
+          echo "Algorithm: ${ALGORITHM}"
+          echo "Map:       ${MAP_FILE}"
+          echo "Scenario:  ${SCENARIO_FILE}"
+          echo "Output:    ${OUTPUT_FILE}"
+
+          set +e
+
+          timeout \
+            "${SCENARIO_TIMEOUT_MINUTES}m" \
+            ./build/MAPF \
+            "${MAP_FILE}" \
+            "${SCENARIO_FILE}" \
+            --algorithm "${ALGORITHM}" \
+            --output "${OUTPUT_FILE}"
+
+          EXIT_CODE=$?
+
+          set -e
+
+          if [ "${EXIT_CODE}" -ne 0 ]; then
+            echo "Benchmark failed with exit code ${EXIT_CODE}"
+
+            printf 'fail\n' > "${OUTPUT_FILE}"
+          fi
+
+          if [ ! -f "${OUTPUT_FILE}" ]; then
+            echo "MAPF finished without producing an output file"
+
+            printf 'fail\n' > "${OUTPUT_FILE}"
+          fi
+
+
+      # ------------------------------------------------------
+      # Save result from this matrix job
+      # ------------------------------------------------------
+      - name: Upload benchmark result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: >-
+            benchmark-${{ matrix.algorithm }}-${{ matrix.case.map }}-${{ matrix.case.scenario }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+          path: output/*
+          if-no-files-found: error
+          retention-days: 7
+
+
+  # ==========================================================
+  # One GitHub Release for the complete workflow run
+  # ==========================================================
+  release:
+    name: Create benchmark release
+
+    needs:
+      - prepare
+      - build
+      - benchmark
+
+    if: >-
+      always() &&
+      needs.prepare.result == 'success' &&
+      needs.build.result == 'success'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+
+    steps:
+      - name: Download all benchmark results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: benchmark-*
+          path: release-assets
+          merge-multiple: true
+
+
+      - name: Create benchmark release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          DATE="$(date -u +'%Y-%m-%d')"
+
+          RELEASE_TAG="benchmark-${DATE}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          gh release create \
+            "${RELEASE_TAG}" \
+            release-assets/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Benchmark ${DATE}" \
+            --notes "Automated MAPF benchmark.
+
+          Commit: ${GITHUB_SHA}
+          Run: ${GITHUB_RUN_ID}
+          Attempt: ${GITHUB_RUN_ATTEMPT}" \
+            --prerelease \
+            --latest=false
