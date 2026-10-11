@@ -14,14 +14,14 @@ std::vector<std::vector<GroupAgent> > Grouping::getGroups(
     std::size_t groupIndex = 0;
 
     for (const auto& [pos, agent] : agents) {
-        if (groupForAgent.find(pos) == groupForAgent.end()) {
+        if (!groupForAgent.contains(pos)) {
             groupForAgent[pos] = groupIndex;
             groups.emplace_back();
             groupIndex++;
         }
 
         for (const auto& neighbor : agent.getNeighbors()) {
-            if (agents.find(neighbor) != agents.end()) {
+            if (agents.contains(neighbor)) {
                 groupForAgent[neighbor] = groupForAgent.at(pos);
             }
         }
