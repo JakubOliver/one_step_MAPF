@@ -99,7 +99,7 @@ std::runtime_error invalidPositionError(
     return std::runtime_error(message.str());
 }
 
-std::vector<Agent> PriorityPlanning::resolve(
+std::vector<Agent> PriorityPlanning::resolve_(
     const Map& map,
     const std::vector<Scenario>& scenarios
 ) {

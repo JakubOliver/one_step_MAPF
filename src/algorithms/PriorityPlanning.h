@@ -5,9 +5,7 @@
 #ifndef MAPF_PRIORITYPLANING_H
 #define MAPF_PRIORITYPLANING_H
 
-#include "../Agent.h"
-#include "../Map.h"
-#include "../Scenario.h"
+#include "Algorithm.h"
 
 #include <cstddef>
 #include <map>
@@ -28,12 +26,17 @@ struct PriorityPlaningState {
     }
 };
 
-class PriorityPlanning {
+class PriorityPlanning : public Algorithm{
 private:
     std::set<PriorityPlaningState> states;
     std::map<std::pair<std::size_t, std::size_t>, std::size_t> finalPositions;
     std::map<std::pair<std::size_t, std::size_t>, std::size_t> latestVisitTimes;
     std::size_t latestReservationTime = 0;
+
+    std::vector<Agent> resolve_(
+        const Map& map,
+        const std::vector<Scenario>& scenarios
+    ) override;
 
     Agent AStar(const Map& map, const Scenario& scenario) const;
     void reservePath(const Agent& agent);
@@ -56,11 +59,6 @@ private:
 
 public:
     PriorityPlanning() = default;
-
-    std::vector<Agent> resolve(
-        const Map& map,
-        const std::vector<Scenario>& scenarios
-    );
 };
 
 
