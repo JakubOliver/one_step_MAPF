@@ -9,6 +9,7 @@
 
 #include "Exporter.h"
 #include "algorithms/PriorityPlanning.h"
+#include "algorithms/Grouping.h"
 
 #include "../external/mapf-visualizer/src/Visualizer.h"
 
@@ -64,6 +65,22 @@ int main(int argc, char** argv) {
         //TODO: remove constant
         Visualizer::run(3, visualizer_argv);
     }
+
+    /*
+    std::map<std::pair<std::size_t, std::size_t>, GroupAgent> groupAgents = {
+        {{3,3}, GroupAgent(3,3)},
+        {{4,3}, GroupAgent(4,3)},
+        {{6,6}, GroupAgent(6,6)}
+    };
+
+    auto groups = Grouping().getGroups(groupAgents);
+    for (const auto& group : groups) {
+        std::cout << "Group: " << std::endl;
+        for (const auto& agent : group) {
+            std::cout << agent.position.first << ", " << agent.position.second << std::endl;
+        }
+    }
+    */
 
     return 0;
 }
