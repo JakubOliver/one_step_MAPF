@@ -205,7 +205,7 @@ jobs:
           submodules: recursive
 
 
-      - name: Install openFrameworks runtime dependencies
+      - name: Install GCC 14 and openFrameworks runtime dependencies
         shell: bash
         run: |
           set -euo pipefail
@@ -213,12 +213,27 @@ jobs:
           sudo apt-get update
 
           sudo apt-get install --yes \
+            software-properties-common \
             libmpg123-dev \
             libunwind-dev
+
+          sudo add-apt-repository --yes \
+            ppa:ubuntu-toolchain-r/test
+
+          sudo apt-get update
+
+          sudo apt-get install --yes \
+            libstdc++6 \
+            libgcc-s1
 
           sudo bash \
             external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
             -y
+
+          echo "Checking installed C++ runtime symbols"
+
+          strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
+            | grep -E 'GLIBCXX_3\.4\.32|CXXABI_1\.3\.15'
 
 
       - name: Download MAPF executable
@@ -267,6 +282,7 @@ jobs:
           mkdir -p output
 
           DATE="$(date -u +'%Y-%m-%d')"
+          BENCHMARK_FAILED=0
 
           jq -e \
             'type == "array" and length > 0' \
@@ -309,14 +325,21 @@ jobs:
               echo "Benchmark failed with exit code ${EXIT_CODE}"
 
               printf 'fail\n' > "${OUTPUT_FILE}"
+              BENCHMARK_FAILED=1
             fi
 
             if [ ! -f "${OUTPUT_FILE}" ]; then
               echo "MAPF finished without producing an output file"
 
               printf 'fail\n' > "${OUTPUT_FILE}"
+              BENCHMARK_FAILED=1
             fi
           done
+
+          if [ "${BENCHMARK_FAILED}" -ne 0 ]; then
+            echo "At least one benchmark scenario failed"
+            exit 1
+          fi
 
 
       # ------------------------------------------------------
