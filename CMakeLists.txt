@@ -123,6 +123,38 @@ add_library(
 
 
 # ------------------------------------------------------------
+# Google Or Tools
+# ------------------------------------------------------------
+
+# OR-Tools dependencies
+set(BUILD_DEPS ON CACHE BOOL "" FORCE)
+
+# Disable unnecessary components
+set(BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_FLATZINC OFF CACHE BOOL "" FORCE)
+
+# Keep enabled (required by current build)
+set(BUILD_MATH_OPT ON CACHE BOOL "" FORCE)
+
+# Disable optional solvers
+set(USE_COINOR OFF CACHE BOOL "" FORCE)
+set(USE_SCIP OFF CACHE BOOL "" FORCE)
+set(USE_HIGHS OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+        or-tools
+        GIT_REPOSITORY https://github.com/google/or-tools.git
+        GIT_TAG stable
+        GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(or-tools)
+
+#target_link_libraries(MAPF PRIVATE ortools::ortools)
+
+# ------------------------------------------------------------
 # Include directories
 # ------------------------------------------------------------
 
@@ -209,6 +241,8 @@ target_link_libraries(
         freeimage
         pugixml
         uriparser
+
+        ortools::ortools
 )
 
 
