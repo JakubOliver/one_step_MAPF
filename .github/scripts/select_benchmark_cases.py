@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from typing import TypedDict
 
 
 MAPS = (
@@ -21,9 +22,21 @@ SCENARIO_TYPES = (
 )
 
 
+class Scenario(TypedDict):
+    type: str
+    name: str
+    file: str
+
+
+class BenchmarkMap(TypedDict):
+    name: str
+    file: str
+    scenarios: list[Scenario]
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Select MovingAI cases for the benchmark matrix.",
+        description="Group selected MovingAI scenarios by map for benchmarking.",
     )
     parser.add_argument(
         "--scenario-count",
@@ -73,22 +86,23 @@ def find_single_map(extracted_dir: Path, map_name: str) -> Path:
     return matches[0]
 
 
-def select_cases(
+def select_maps(
     scenario_count: int,
     extracted_dir: Path,
     output_dir: Path,
-) -> list[dict[str, str]]:
+) -> list[BenchmarkMap]:
     maps_dir = output_dir / "maps"
     scenarios_dir = output_dir / "scenarios"
     maps_dir.mkdir(parents=True, exist_ok=True)
     scenarios_dir.mkdir(parents=True, exist_ok=True)
 
-    cases = []
+    maps: list[BenchmarkMap] = []
 
     for map_name in MAPS:
         source_map = find_single_map(extracted_dir, map_name)
         target_map = maps_dir / source_map.name
         shutil.copy2(source_map, target_map)
+        scenarios: list[Scenario] = []
 
         for scenario_type in SCENARIO_TYPES:
             matches = sorted(
@@ -107,38 +121,44 @@ def select_cases(
                 target_scenario = scenarios_dir / scenario.name
                 shutil.copy2(scenario, target_scenario)
 
-                cases.append(
+                scenarios.append(
                     {
-                        "map": map_name,
-                        "map_file": str(Path("maps") / target_map.name),
-                        "scenario_type": scenario_type,
-                        "scenario": scenario.stem,
-                        "scenario_file": str(
+                        "type": scenario_type,
+                        "name": scenario.stem,
+                        "file": str(
                             Path("scenarios") / target_scenario.name
                         ),
                     }
                 )
 
-    return cases
+        maps.append(
+            {
+                "name": map_name,
+                "file": str(Path("maps") / target_map.name),
+                "scenarios": scenarios,
+            }
+        )
+
+    return maps
 
 
-def write_github_output(path: Path, cases: list[dict[str, str]]) -> None:
+def write_github_output(path: Path, maps: list[BenchmarkMap]) -> None:
     with path.open("a", encoding="utf-8") as github_output:
         github_output.write(
-            "cases=" + json.dumps(cases, separators=(",", ":")) + "\n"
+            "maps=" + json.dumps(maps, separators=(",", ":")) + "\n"
         )
 
 
 def main() -> None:
     arguments = parse_arguments()
-    cases = select_cases(
+    maps = select_maps(
         arguments.scenario_count,
         arguments.extracted_dir,
         arguments.output_dir,
     )
 
-    print(json.dumps(cases, indent=2))
-    write_github_output(arguments.github_output, cases)
+    print(json.dumps(maps, indent=2))
+    write_github_output(arguments.github_output, maps)
 
 
 if __name__ == "__main__":

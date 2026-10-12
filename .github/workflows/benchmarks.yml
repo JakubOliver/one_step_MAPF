@@ -35,7 +35,7 @@ jobs:
     runs-on: &runner_os ubuntu-22.04
 
     outputs:
-      cases: ${{ steps.matrix.outputs.cases }}
+      maps: ${{ steps.matrix.outputs.maps }}
 
     steps:
       - name: Check out repository
@@ -60,7 +60,7 @@ jobs:
           done
 
 
-      - name: Select benchmark cases
+      - name: Select benchmark maps and scenarios
         id: matrix
         shell: bash
         env:
@@ -104,6 +104,7 @@ jobs:
           sudo apt-get install --yes \
             libmpg123-dev \
             libunwind-dev
+          sudo apt-get install --yes gcc-14 g++-14
 
           sudo bash \
             external/mapf-visualizer/third_party/openFrameworks/scripts/linux/ubuntu/install_dependencies.sh \
@@ -153,13 +154,12 @@ jobs:
 
 
   # ==========================================================
-  # Run one algorithm on one scenario
+  # Run one algorithm on all selected scenarios for one map
   # ==========================================================
   benchmark:
     name: >-
       ${{ matrix.algorithm }} |
-      ${{ matrix.case.map }} |
-      ${{ matrix.case.scenario }}
+      ${{ matrix.map.name }}
 
     needs:
       - prepare
@@ -176,7 +176,7 @@ jobs:
         algorithm:
           - "PriorityPlanning"
 
-        case: ${{ fromJSON(needs.prepare.outputs.cases) }}
+        map: ${{ fromJSON(needs.prepare.outputs.maps) }}
 
 
     steps:
@@ -234,54 +234,69 @@ jobs:
         env:
           ALGORITHM: ${{ matrix.algorithm }}
 
-          MAP_NAME: ${{ matrix.case.map }}
-          MAP_FILE: benchmark-data/${{ matrix.case.map_file }}
+          MAP_NAME: ${{ matrix.map.name }}
+          MAP_FILE: benchmark-data/${{ matrix.map.file }}
 
-          SCENARIO_TYPE: ${{ matrix.case.scenario_type }}
-          SCENARIO_NAME: ${{ matrix.case.scenario }}
-          SCENARIO_FILE: benchmark-data/${{ matrix.case.scenario_file }}
+          SCENARIOS_JSON: ${{ toJSON(matrix.map.scenarios) }}
 
           SCENARIO_TIMEOUT_MINUTES: ${{ inputs.scenario_timeout_minutes || '10' }}
 
         run: |
-          set -u
+          set -euo pipefail
 
           mkdir -p output
 
           DATE="$(date -u +'%Y-%m-%d')"
 
-          OUTPUT_FILE="output/${ALGORITHM}__${MAP_NAME}__${SCENARIO_TYPE}__${SCENARIO_NAME}__${DATE}__run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          jq -e \
+            'type == "array" and length > 0' \
+            <<< "${SCENARIOS_JSON}" \
+            > /dev/null
 
-          echo "Algorithm: ${ALGORITHM}"
-          echo "Map:       ${MAP_FILE}"
-          echo "Scenario:  ${SCENARIO_FILE}"
-          echo "Output:    ${OUTPUT_FILE}"
+          mapfile -t SCENARIOS < <(
+            jq -c \
+              '.[]' \
+              <<< "${SCENARIOS_JSON}"
+          )
 
-          set +e
+          for SCENARIO_JSON in "${SCENARIOS[@]}"; do
+            SCENARIO_TYPE="$(jq -r '.type' <<< "${SCENARIO_JSON}")"
+            SCENARIO_NAME="$(jq -r '.name' <<< "${SCENARIO_JSON}")"
+            SCENARIO_FILE="benchmark-data/$(jq -r '.file' <<< "${SCENARIO_JSON}")"
 
-          timeout \
-            "${SCENARIO_TIMEOUT_MINUTES}m" \
-            ./build/MAPF \
-            "${MAP_FILE}" \
-            "${SCENARIO_FILE}" \
-            --algorithm "${ALGORITHM}" \
-            --output "${OUTPUT_FILE}"
+            OUTPUT_FILE="output/${ALGORITHM}__${MAP_NAME}__${SCENARIO_TYPE}__${SCENARIO_NAME}__${DATE}__run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
 
-          EXIT_CODE=$?
+            echo "Algorithm: ${ALGORITHM}"
+            echo "Map:       ${MAP_FILE}"
+            echo "Scenario:  ${SCENARIO_FILE}"
+            echo "Output:    ${OUTPUT_FILE}"
 
-          set -e
+            set +e
 
-          if [ "${EXIT_CODE}" -ne 0 ]; then
-            echo "Benchmark failed with exit code ${EXIT_CODE}"
+            timeout \
+              "${SCENARIO_TIMEOUT_MINUTES}m" \
+              ./build/MAPF \
+              "${MAP_FILE}" \
+              "${SCENARIO_FILE}" \
+              --algorithm "${ALGORITHM}" \
+              --output "${OUTPUT_FILE}"
 
-            printf 'fail\n' > "${OUTPUT_FILE}"
-          fi
+            EXIT_CODE=$?
 
-          if [ ! -f "${OUTPUT_FILE}" ]; then
-            echo "MAPF finished without producing an output file"
+            set -e
 
-            printf 'fail\n' > "${OUTPUT_FILE}"
-          fi
+            if [ "${EXIT_CODE}" -ne 0 ]; then
+              echo "Benchmark failed with exit code ${EXIT_CODE}"
+
+              printf 'fail\n' > "${OUTPUT_FILE}"
+            fi
+
+            if [ ! -f "${OUTPUT_FILE}" ]; then
+              echo "MAPF finished without producing an output file"
+
+              printf 'fail\n' > "${OUTPUT_FILE}"
+            fi
+          done
 
 
       # ------------------------------------------------------
@@ -292,7 +307,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: >-
-            benchmark-result-${{ matrix.algorithm }}-${{ matrix.case.map }}-${{ matrix.case.scenario }}-${{ github.run_id }}-${{ github.run_attempt }}
+            benchmark-result-${{ matrix.algorithm }}-${{ matrix.map.name }}-${{ github.run_id }}-${{ github.run_attempt }}
 
           path: output/*
           if-no-files-found: error
