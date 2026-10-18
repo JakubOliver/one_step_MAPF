@@ -1,0 +1,25 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": true,
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/out/build/debug",
+    "--background-index",
+    "--clang-tidy",
+    "--completion-style=detailed"
+  ],
+  "clangd.detectExtensionConflicts": false,
+  "clangd.fallbackFlags": [
+    "-std=c++23"
+  ],
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/cmake-build-*/**": true,
+    "**/out/build/**": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/cmake-build-*": true,
+    "**/out/build": true
+  }
+}

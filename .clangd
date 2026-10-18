@@ -1,0 +1,5 @@
+If:
+  PathMatch: (external|out/build/debug/_deps)/.*
+
+Index:
+  Background: Skip
