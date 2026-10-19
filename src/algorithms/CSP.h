@@ -17,7 +17,7 @@ private:
 
     std::vector<Agent> processGroup(
         const std::vector<Agent>& agents,
-        std::size_t map_width
+        const Map& map
     );
 public:
     void processGroup_mocked();

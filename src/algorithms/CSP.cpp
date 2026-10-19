@@ -5,9 +5,13 @@
 #include "CSP.h"
 
 #include "Grouping.h"
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <map>
+#include <set>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -28,7 +32,7 @@ int64_t from_pos_to_index(
 
 std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
-    std::size_t map_width
+    const Map& map
 ) {
     CpModelBuilder cp_model;
 
@@ -42,8 +46,12 @@ std::vector<Agent> CSP::processGroup(
         std::vector<int64_t> costs;
 
         auto add_candidate = [&](const auto& pos) {
+            if (!map.isInBounds(pos) || map.isBlocked(pos)) {
+                return;
+            }
+
             Q_pos.push_back(
-                from_pos_to_index(pos, map_width)
+                from_pos_to_index(pos, map.width)
             );
 
             const int64_t dx =
@@ -115,8 +123,8 @@ std::vector<Agent> CSP::processGroup(
         const int64_t index =
             SolutionIntegerValue(response, agents_vars[i]);
 
-        const int64_t x = index % map_width;
-        const int64_t y = index / map_width;
+        const int64_t x = index % map.width;
+        const int64_t y = index / map.width;
 
         updated_agents[i].position = {
             static_cast<std::size_t>(x),
@@ -139,14 +147,25 @@ std::vector<Agent> CSP::processGroup(
 }
 
 void CSP::processGroup_mocked() {
-    constexpr std::size_t map_width = 20;
+    const Map map{
+        .type = "mock",
+        .height = 20,
+        .width = 20,
+        .map = {
+            {{0, 0}, false},
+            {{0, 1}, false},
+            {{1, 0}, false},
+            {{1, 1}, false},
+            {{2, 0}, false}
+        }
+    };
 
     std::vector<Agent> agents = {
         {{0, 0}, {10, 10}},
         {{1, 0}, {10, 11}}
     };
 
-    CSP::processGroup(agents, map_width);
+    CSP::processGroup(agents, map);
 }
 
 std::vector<AgentPath>CSP::resolve_(
@@ -154,64 +173,87 @@ std::vector<AgentPath>CSP::resolve_(
     const std::vector<Scenario>& scenarios
 ) {
     std::map<AgentCord, Agent> agents;
+    std::map<AgentCord, std::size_t> agent_indices;
+    std::vector<std::vector<AgentCord>> paths(scenarios.size());
 
-    for (const auto& scenario : scenarios) {
+    for (std::size_t i = 0; i < scenarios.size(); ++i) {
+        const auto& scenario = scenarios[i];
         const AgentCord start{scenario.startX, scenario.startY};
         const AgentCord goal{scenario.goalX, scenario.goalY};
 
-        agents.insert(
-            std::make_pair(
-                start,
-                Agent(
-                    start,
-                    goal
-                )
-            )
+        const auto [agent_it, inserted] = agents.emplace(
+            start,
+            Agent(start, goal)
         );
+
+        agent_indices.emplace(agent_it->first, i);
+        paths[i].push_back(start);
     }
 
     Grouping grouping;
+    std::set<std::vector<AgentCord>> visited_configurations;
+
+    auto get_configuration = [&]() {
+        std::vector<AgentCord> configuration(scenarios.size());
+
+        for (const auto& [position, agent_index] : agent_indices) {
+            configuration[agent_index] = position;
+        }
+
+        return configuration;
+    };
+
+    visited_configurations.insert(get_configuration());
+
     while (
         !std::all_of(
             agents.begin(),
-             agents.end(), 
-             [](const auto& agent){return agent.second.isAtGoal();})
-    ){
-        auto groups = grouping.getGroups(agents);
+            agents.end(),
+            [](const auto& agent) {
+                return agent.second.isAtGoal();
+            }
+        )
+    ) {
+        const auto groups = grouping.getGroups(agents);
+        std::map<AgentCord, Agent> updated_agents;
+        std::map<AgentCord, std::size_t> updated_agent_indices;
 
-        std::vector<std::vector<Agent>> new_agents(groups.size());
         for (const auto& group : groups) {
-            new_agents.push_back(processGroup(group, map.width));
-        }
+            const auto processed_group = processGroup(
+                group,
+                map
+            );
 
-        /*
-        for (const auto& agent : agents | std::views::values) {
-            std::cout << agent << std::endl;
-        }
-        
+            for (std::size_t i = 0; i < group.size(); ++i) {
+                const auto agent_index = agent_indices.at(
+                    group[i].position
+                );
+                const auto& processed_agent = processed_group[i];
 
-        std::cout << "--------------------" << std::endl;
 
-        for (const auto& agents : new_agents) {
-            for (const auto& agent : agents) {
-                std::cout << agent << std::endl;
+                const auto [agent_it, inserted] = updated_agents.emplace(
+                    processed_agent.position,
+                    processed_agent
+                );
+
+                updated_agent_indices.emplace(
+                    agent_it->first,
+                    agent_index
+                );
+                paths[agent_index].push_back(processed_agent.position);
             }
         }
-        */
 
-        agents.clear();
-        for (const auto& n_agents : new_agents) {
-            for (const auto& agent : n_agents) {
-                agents.insert(
-                    std::make_pair(
-                        agent.position,
-                        agent
-                    )
-                );  
-            }
-        }
-                
+        agents = std::move(updated_agents);
+        agent_indices = std::move(updated_agent_indices);
     }
 
-    return std::vector<AgentPath>{};
+    std::vector<AgentPath> agent_paths;
+    agent_paths.reserve(paths.size());
+
+    for (auto& path : paths) {
+        agent_paths.emplace_back(std::move(path));
+    }
+
+    return agent_paths;
 }

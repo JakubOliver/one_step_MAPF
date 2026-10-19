@@ -49,8 +49,7 @@ int main(int argc, char** argv) {
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
     } else if (algorithm_name == "CSP") {
-        CSP().resolve(map, scenarios);
-        agents = std::vector<AgentPath>(); //TODO: implement CSP
+        agents = CSP().resolve(map, scenarios);
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;
