@@ -13,13 +13,13 @@
 
 class Algorithm {
 private:
-    virtual std::vector<Agent> resolve_(
+    virtual std::vector<AgentPath> resolve_(
         const Map& map,
         const std::vector<Scenario>& scenarios
     ) = 0;
 
 public:
-    std::vector<Agent> resolve(
+    std::vector<AgentPath> resolve(
         const Map& map,
         const std::vector<Scenario>& scenarios
     );

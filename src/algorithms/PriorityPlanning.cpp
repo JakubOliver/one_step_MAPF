@@ -99,7 +99,7 @@ std::runtime_error invalidPositionError(
     return std::runtime_error(message.str());
 }
 
-std::vector<Agent> PriorityPlanning::resolve_(
+std::vector<AgentPath> PriorityPlanning::resolve_(
     const Map& map,
     const std::vector<Scenario>& scenarios
 ) {
@@ -108,7 +108,7 @@ std::vector<Agent> PriorityPlanning::resolve_(
     latestVisitTimes.clear();
     latestReservationTime = 0;
 
-    std::vector<Agent> agents;
+    std::vector<AgentPath> agents;
     agents.reserve(scenarios.size());
 
     //TODO: randomize priority
@@ -124,7 +124,7 @@ std::vector<Agent> PriorityPlanning::resolve_(
     return agents;
 }
 
-Agent PriorityPlanning::AStar(const Map& map, const Scenario& scenario) const {
+AgentPath PriorityPlanning::AStar(const Map& map, const Scenario& scenario) const {
     if (map.width == 0 || map.height == 0) {
         throw std::runtime_error("A* cannot search a map with a zero dimension");
     }
@@ -194,7 +194,7 @@ Agent PriorityPlanning::AStar(const Map& map, const Scenario& scenario) const {
             }
 
             std::reverse(path.begin(), path.end());
-            return Agent(std::move(path));
+            return AgentPath(std::move(path));
         }
 
         if (current.time >= maximumTime) {
@@ -238,7 +238,7 @@ Agent PriorityPlanning::AStar(const Map& map, const Scenario& scenario) const {
     throw std::runtime_error(message.str());
 }
 
-void PriorityPlanning::reservePath(const Agent& agent) {
+void PriorityPlanning::reservePath(const AgentPath& agent) {
     const auto& path = agent.getPath();
 
     for (std::size_t time = 0; time < path.size(); time++) {

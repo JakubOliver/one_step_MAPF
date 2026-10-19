@@ -6,9 +6,9 @@
 
 #include <fstream>
 
-void Exporter::export_agents(const std::vector<Agent> &agents, const std::string& outputFile) {
+void Exporter::export_agents(const std::vector<AgentPath> &agents, const std::string& outputFile) {
     std::size_t maxPathSize = 0;
-    for (const Agent& agent : agents) {
+    for (const AgentPath& agent : agents) {
         maxPathSize = std::max(maxPathSize, agent.getLength());
     }
 
@@ -17,7 +17,7 @@ void Exporter::export_agents(const std::vector<Agent> &agents, const std::string
     for (std::size_t i = 0; i < maxPathSize; i++) {
         file << i << ":";
 
-        for (const Agent& agent : agents) {
+        for (const AgentPath& agent : agents) {
             auto [x, y] = agent.getPathAtTime(i);
 
             file << '(' << x << ',' << y << ')' << ',';

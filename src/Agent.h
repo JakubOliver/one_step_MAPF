@@ -9,13 +9,13 @@
 #include <utility>
 #include <vector>
 
-class Agent {
+class AgentPath {
 private:
     std::vector<std::pair<std::size_t, std::size_t>> path;
 
 public:
-    Agent() = default;
-    explicit Agent(std::vector<std::pair<std::size_t, std::size_t>> path);
+    AgentPath() = default;
+    explicit AgentPath(std::vector<std::pair<std::size_t, std::size_t>> path);
 
     std::size_t getLength() const;
 

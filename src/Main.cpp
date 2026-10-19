@@ -8,6 +8,7 @@
 #include <argparse/argparse.hpp>
 
 #include "Exporter.h"
+#include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
 #include "algorithms/Grouping.h"
 
@@ -44,9 +45,12 @@ int main(int argc, char** argv) {
 
     auto algorithm_name = program.get<std::string>("--algorithm");
 
-    std::vector<Agent> agents;
+    std::vector<AgentPath> agents;
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
+    } else if (algorithm_name == "CSP") {
+        CSP::processGroup_mocked();
+        agents = std::vector<AgentPath>(); //TODO: implement CSP
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;
