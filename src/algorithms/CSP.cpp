@@ -21,6 +21,8 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
+//TODO: SOmewhere is issue, that in the CSP two agents can use same edge at the same time.
+
 int64_t from_pos_to_index(
     AgentCord position,
     std::size_t map_width
@@ -204,6 +206,7 @@ std::vector<AgentPath>CSP::resolve_(
     };
 
     visited_configurations.insert(get_configuration());
+    std::size_t iteration = 0;
 
     while (
         !std::all_of(
@@ -246,6 +249,19 @@ std::vector<AgentPath>CSP::resolve_(
 
         agents = std::move(updated_agents);
         agent_indices = std::move(updated_agent_indices);
+
+        iteration++;
+        const auto agents_at_goal = std::count_if(
+            agents.begin(),
+            agents.end(),
+            [](const auto& agent) {
+                return agent.second.isAtGoal();
+            }
+        );
+
+        std::cout << "CSP iteration " << iteration << ": "
+                  << agents_at_goal << '/' << agents.size()
+                  << " agents at goal\n";
     }
 
     std::vector<AgentPath> agent_paths;
