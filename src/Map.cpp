@@ -8,7 +8,7 @@ bool Map::isInBounds(std::size_t x, std::size_t y) const {
     return isInBounds({x, y});
 }
 
-bool Map::isInBounds(std::pair<std::size_t, std::size_t> pos) const {
+bool Map::isInBounds(AgentCord pos) const {
     return pos.first < width && pos.second < height;
 }
 
@@ -16,6 +16,6 @@ bool Map::isBlocked(std::size_t x, std::size_t y) const {
     return isBlocked({x, y});
 }
 
-bool Map::isBlocked(std::pair<std::size_t, std::size_t> pos) const {
+bool Map::isBlocked(AgentCord pos) const {
     return map.at(pos);
 }

@@ -5,22 +5,23 @@
 #ifndef MAPF_AGENT_H
 #define MAPF_AGENT_H
 
+#include "AgentCord.h"
+
 #include <cstddef>
-#include <utility>
 #include <vector>
 
 class AgentPath {
 private:
-    std::vector<std::pair<std::size_t, std::size_t>> path;
+    std::vector<AgentCord> path;
 
 public:
     AgentPath() = default;
-    explicit AgentPath(std::vector<std::pair<std::size_t, std::size_t>> path);
+    explicit AgentPath(std::vector<AgentCord> path);
 
     std::size_t getLength() const;
 
-    const std::vector<std::pair<std::size_t, std::size_t>>& getPath() const;
-    std::pair<std::size_t, std::size_t> getPathAtTime(std::size_t time) const;
+    const std::vector<AgentCord>& getPath() const;
+    AgentCord getPathAtTime(std::size_t time) const;
 };
 
 

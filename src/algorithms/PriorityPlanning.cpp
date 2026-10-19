@@ -13,8 +13,6 @@
 #include <utility>
 #include <vector>
 
-using Position = std::pair<std::size_t, std::size_t>;
-
 struct SearchState {
     std::size_t x;
     std::size_t y;
@@ -52,7 +50,7 @@ std::size_t distanceBetween(std::size_t first, std::size_t second) {
     return first > second ? first - second : second - first;
 }
 
-std::size_t heuristic(Position from, Position to) {
+std::size_t heuristic(AgentCord from, AgentCord to) {
     const auto xDistance = distanceBetween(from.first, to.first);
     const auto yDistance = distanceBetween(from.second, to.second);
     return xDistance + yDistance;
@@ -154,7 +152,7 @@ AgentPath PriorityPlanning::AStar(const Map& map, const Scenario& scenario) cons
         .y = scenario.startY,
         .time = 0
     };
-    const Position goal{scenario.goalX, scenario.goalY};
+    const AgentCord goal{scenario.goalX, scenario.goalY};
 
     std::priority_queue<OpenNode, std::vector<OpenNode>, OpenNodeCompare> open;
     std::set<SearchState> discovered;
@@ -181,7 +179,7 @@ AgentPath PriorityPlanning::AStar(const Map& map, const Scenario& scenario) cons
             && current.y == scenario.goalY
             && canOccupyGoalFrom(current.x, current.y, current.time)
         ) {
-            std::vector<Position> path;
+            std::vector<AgentCord> path;
             auto pathState = current;
 
             while (true) {
@@ -207,8 +205,8 @@ AgentPath PriorityPlanning::AStar(const Map& map, const Scenario& scenario) cons
                 continue;
             }
 
-            const Position from{current.x, current.y};
-            const Position to{neighbor.x, neighbor.y};
+            const AgentCord from{current.x, current.y};
+            const AgentCord to{neighbor.x, neighbor.y};
             if (from != to && hasTransitionConflict(from, to, nextTime)) {
                 continue;
             }
@@ -253,7 +251,7 @@ void PriorityPlanning::reservePath(const AgentPath& agent) {
             .previousY = previousY
         });
 
-        const Position position{x, y};
+        const AgentCord position{x, y};
         const auto latestVisit = latestVisitTimes.find(position);
         if (
             latestVisit == latestVisitTimes.end()
@@ -290,8 +288,8 @@ bool PriorityPlanning::hasVertexConflict(
 }
 
 bool PriorityPlanning::hasTransitionConflict(
-    Position from,
-    Position to,
+    AgentCord from,
+    AgentCord to,
     std::size_t arrivalTime
 ) const {
     const PriorityPlaningState reverseDestination{
@@ -313,7 +311,7 @@ bool PriorityPlanning::canOccupyGoalFrom(
     std::size_t y,
     std::size_t time
 ) const {
-    const Position position{x, y};
+    const AgentCord position{x, y};
     if (finalPositions.contains(position)) {
         return false;
     }

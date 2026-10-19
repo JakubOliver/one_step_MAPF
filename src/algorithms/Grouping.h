@@ -5,13 +5,15 @@
 #ifndef MAPF_GROUPING_H
 #define MAPF_GROUPING_H
 
+#include "../AgentCord.h"
+
 #include <cstddef>
 #include <vector>
 #include <generator>
 #include <array>
 #include <map>
 
-struct GroupAgent {
+struct Agent {
 private:
     static constexpr std::array<std::pair<int, int>, 4> canMoves = {{
         {1, 0},
@@ -27,21 +29,29 @@ private:
         {1, -1}
     }};
 public:
-    std::pair<std::size_t, std::size_t> position;
-    std::pair<std::size_t, std::size_t> goal;
+    AgentCord position;
+    AgentCord goal;
 
-    GroupAgent(std::size_t x, std::size_t y) : GroupAgent(x, y, 0, 0) {}
-    GroupAgent(std::size_t x, std::size_t y, std::size_t gx, std::size_t gy) : GroupAgent(std::make_pair(x, y), std::make_pair(gx, gy)) {}
-    GroupAgent(std::pair<std::size_t, std::size_t> pos, std::pair<std::size_t, std::size_t> g) : position(pos), goal(g) {}
+    Agent(std::size_t x, std::size_t y) : Agent(x, y, 0, 0) {}
+    Agent(
+        std::size_t x,
+        std::size_t y,
+        std::size_t gx,
+        std::size_t gy
+    ) : Agent(AgentCord{x, y}, AgentCord{gx, gy}) {}
+    Agent(AgentCord pos, AgentCord g) : position(pos), goal(g) {}
 
-    std::generator<std::pair<std::size_t, std::size_t>> getNeighbors() const;
-    std::generator<std::pair<std::size_t, std::size_t>> getMoveTo() const;
+    std::generator<AgentCord> getNeighbors() const;
+    std::generator<AgentCord> getMoveTo() const;
 };
 
 class Grouping {
 public:
     //TODO: prepsat na iterator
-    std::vector<std::vector<GroupAgent>> getGroups(const std::map<std::pair<std::size_t, std::size_t>, GroupAgent>& agents);
+    //TODO: maybe static
+    std::vector<std::vector<Agent>> getGroups(
+        const std::map<AgentCord, Agent>& agents
+    );
 };
 
 

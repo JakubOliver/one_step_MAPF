@@ -71,10 +71,10 @@ int main(int argc, char** argv) {
     }
 
     /*
-    std::map<std::pair<std::size_t, std::size_t>, GroupAgent> groupAgents = {
-        {{3,3}, GroupAgent(3,3)},
-        {{4,3}, GroupAgent(4,3)},
-        {{6,6}, GroupAgent(6,6)}
+    std::map<AgentCord, Agent> groupAgents = {
+        {{3,3}, Agent(3,3)},
+        {{4,3}, Agent(4,3)},
+        {{6,6}, Agent(6,6)}
     };
 
     auto groups = Grouping().getGroups(groupAgents);
