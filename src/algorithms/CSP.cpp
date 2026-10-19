@@ -18,7 +18,7 @@ using namespace operations_research;
 using namespace operations_research::sat;
 
 int64_t from_pos_to_index(
-    std::pair<std::size_t, std::size_t> position,
+    AgentCord position,
     std::size_t map_width
 ) {
     return static_cast<int64_t>(
@@ -26,14 +26,10 @@ int64_t from_pos_to_index(
     );
 }
 
-void CSP::processGroup_mocked() {
-    constexpr std::size_t map_width = 20;
-
-    std::vector<GroupAgent> agents = {
-        {{0, 0}, {10, 10}},
-        {{1, 0}, {10, 11}}
-    };
-
+std::vector<Agent> CSP::processGroup(
+    const std::vector<Agent>& agents,
+    std::size_t map_width
+) {
     CpModelBuilder cp_model;
 
     std::vector<IntVar> agents_vars;
@@ -110,8 +106,10 @@ void CSP::processGroup_mocked() {
     if (response.status() != CpSolverStatus::OPTIMAL &&
         response.status() != CpSolverStatus::FEASIBLE) {
         std::cout << "No solution found\n";
-        return;
+        return {};
     }
+
+    std::vector<Agent> updated_agents = agents;
 
     for (std::size_t i = 0; i < agents_vars.size(); ++i) {
         const int64_t index =
@@ -120,11 +118,100 @@ void CSP::processGroup_mocked() {
         const int64_t x = index % map_width;
         const int64_t y = index / map_width;
 
+        updated_agents[i].position = {
+            static_cast<std::size_t>(x),
+            static_cast<std::size_t>(y)
+        };
+
+        /*
         std::cout << "Agent " << i
                   << ": (" << x << ", " << y << ")\n";
+        */
     }
 
+    /*
     std::cout << "Total fitness: "
               << response.objective_value()
               << '\n';
+    */
+
+    return updated_agents;
+}
+
+void CSP::processGroup_mocked() {
+    constexpr std::size_t map_width = 20;
+
+    std::vector<Agent> agents = {
+        {{0, 0}, {10, 10}},
+        {{1, 0}, {10, 11}}
+    };
+
+    CSP::processGroup(agents, map_width);
+}
+
+std::vector<AgentPath>CSP::resolve_(
+    const Map& map,
+    const std::vector<Scenario>& scenarios
+) {
+    std::map<AgentCord, Agent> agents;
+
+    for (const auto& scenario : scenarios) {
+        const AgentCord start{scenario.startX, scenario.startY};
+        const AgentCord goal{scenario.goalX, scenario.goalY};
+
+        agents.insert(
+            std::make_pair(
+                start,
+                Agent(
+                    start,
+                    goal
+                )
+            )
+        );
+    }
+
+    Grouping grouping;
+    while (
+        !std::all_of(
+            agents.begin(),
+             agents.end(), 
+             [](const auto& agent){return agent.second.isAtGoal();})
+    ){
+        auto groups = grouping.getGroups(agents);
+
+        std::vector<std::vector<Agent>> new_agents(groups.size());
+        for (const auto& group : groups) {
+            new_agents.push_back(processGroup(group, map.width));
+        }
+
+        /*
+        for (const auto& agent : agents | std::views::values) {
+            std::cout << agent << std::endl;
+        }
+        
+
+        std::cout << "--------------------" << std::endl;
+
+        for (const auto& agents : new_agents) {
+            for (const auto& agent : agents) {
+                std::cout << agent << std::endl;
+            }
+        }
+        */
+
+        agents.clear();
+        for (const auto& n_agents : new_agents) {
+            for (const auto& agent : n_agents) {
+                agents.insert(
+                    std::make_pair(
+                        agent.position,
+                        agent
+                    )
+                );  
+            }
+        }
+                
+    }
+
+    return std::vector<AgentPath>{};
 }

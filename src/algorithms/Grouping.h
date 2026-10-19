@@ -12,6 +12,7 @@
 #include <generator>
 #include <array>
 #include <map>
+#include <ostream>
 
 struct Agent {
 private:
@@ -43,6 +44,20 @@ public:
 
     std::generator<AgentCord> getNeighbors() const;
     std::generator<AgentCord> getMoveTo() const;
+
+    bool isAtGoal() const {
+        return position == goal;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Agent& agent) {
+        os << "Agent: ("
+           << agent.position.first << ", " << agent.position.second
+           << ") -> ("
+           << agent.goal.first << ", " << agent.goal.second
+           << ')';
+
+        return os;
+    }
 };
 
 class Grouping {

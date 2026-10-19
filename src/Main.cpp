@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
     } else if (algorithm_name == "CSP") {
-        CSP::processGroup_mocked();
+        CSP().resolve(map, scenarios);
         agents = std::vector<AgentPath>(); //TODO: implement CSP
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
