@@ -40,6 +40,16 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(csv_parser)
 
+# csv-parser instruments its Debug build with --coverage, but does not expose
+# the corresponding runtime requirement to targets that link its static library.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(
+            csv
+            INTERFACE
+            $<$<CONFIG:Debug>:--coverage>
+    )
+endif()
+
 
 # ============================================================
 # mapf-visualizer / openFrameworks
@@ -113,6 +123,7 @@ file(GLOB OFXGUI_SOURCES
 
 add_library(
         mapf_visualizer
+        STATIC
 
         ${MAPF_VISUALIZER_DIR}/src/Visualizer.cpp
         ${MAPF_VISUALIZER_DIR}/src/ofApp.cpp

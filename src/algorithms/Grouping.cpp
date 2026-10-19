@@ -69,6 +69,37 @@ std::generator<std::pair<std::size_t, std::size_t> > GroupAgent::getNeighbors() 
         auto ny = validMove(y, dy);
 
         if (nx && ny)
-            co_yield {*nx, *ny};
+            co_yield std::pair<std::size_t, std::size_t>{*nx, *ny};
+    }
+}
+
+std::generator<std::pair<std::size_t, std::size_t>> GroupAgent::getMoveTo() const {
+    auto [x, y] = position;
+
+    auto validMove = [](std::size_t value, int delta)
+        -> std::optional<std::size_t>
+    {
+        if (delta < 0) {
+            auto d = static_cast<std::size_t>(-delta);
+            if (value < d)
+                return std::nullopt;
+
+            return value - d;
+        }
+
+        auto d = static_cast<std::size_t>(delta);
+
+        if (value > std::numeric_limits<std::size_t>::max() - d)
+            return std::nullopt;
+
+        return value + d;
+    };
+
+    for (auto [dx, dy] : canMoves) {
+        auto nx = validMove(x, dx);
+        auto ny = validMove(y, dy);
+
+        if (nx && ny)
+            co_yield std::pair<std::size_t, std::size_t>{*nx, *ny};
     }
 }
