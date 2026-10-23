@@ -36,7 +36,7 @@ Map InputLoader::loadMap(const std::string& fileName) {
 
     //TOOD: add validation
 
-    std::map<std::pair<std::size_t, std::size_t>, bool> mapData;
+    std::map<AgentCord, bool> mapData;
     std::string line;
     std::size_t row = 0;
     while (row < height && getline(mapFile, line)) {
@@ -48,9 +48,9 @@ Map InputLoader::loadMap(const std::string& fileName) {
             char c = line[column];
 
             if (c == 'T') {
-                mapData[std::make_pair(column, row)] = true;
+                mapData[AgentCord{column, row}] = true;
             } else {
-                mapData[std::make_pair(column, row)] = false;
+                mapData[AgentCord{column, row}] = false;
             }
         }
 

@@ -6,11 +6,11 @@
 
 #include <limits>
 
-std::vector<std::vector<GroupAgent> > Grouping::getGroups(
-    const std::map<std::pair<std::size_t, std::size_t>, GroupAgent> &agents
+std::vector<std::vector<Agent> > Grouping::getGroups(
+    const std::map<AgentCord, Agent>& agents
 ) {
-    std::vector<std::vector<GroupAgent>> groups;
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t> groupForAgent;
+    std::vector<std::vector<Agent>> groups;
+    std::map<AgentCord, std::size_t> groupForAgent;
     std::size_t groupIndex = 0;
 
     for (const auto& [pos, agent] : agents) {
@@ -32,7 +32,7 @@ std::vector<std::vector<GroupAgent> > Grouping::getGroups(
     return groups;
 }
 
-std::generator<std::pair<std::size_t, std::size_t> > GroupAgent::getNeighbors() const {
+std::generator<AgentCord> Agent::getNeighbors() const {
     auto [x, y] = position;
 
     auto validMove = [](std::size_t value, int delta)
@@ -69,11 +69,11 @@ std::generator<std::pair<std::size_t, std::size_t> > GroupAgent::getNeighbors() 
         auto ny = validMove(y, dy);
 
         if (nx && ny)
-            co_yield std::pair<std::size_t, std::size_t>{*nx, *ny};
+            co_yield AgentCord{*nx, *ny};
     }
 }
 
-std::generator<std::pair<std::size_t, std::size_t>> GroupAgent::getMoveTo() const {
+std::generator<AgentCord> Agent::getMoveTo() const {
     auto [x, y] = position;
 
     auto validMove = [](std::size_t value, int delta)
@@ -100,6 +100,6 @@ std::generator<std::pair<std::size_t, std::size_t>> GroupAgent::getMoveTo() cons
         auto ny = validMove(y, dy);
 
         if (nx && ny)
-            co_yield std::pair<std::size_t, std::size_t>{*nx, *ny};
+            co_yield AgentCord{*nx, *ny};
     }
 }

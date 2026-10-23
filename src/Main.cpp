@@ -9,6 +9,7 @@
 #include <argparse/argparse.hpp>
 
 #include "Exporter.h"
+#include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
 #include "algorithms/Grouping.h"
 
@@ -56,9 +57,11 @@ int main(int argc, char** argv) {
 
     auto algorithm_name = program.get<std::string>("--algorithm");
 
-    std::vector<Agent> agents;
+    std::vector<AgentPath> agents;
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
+    } else if (algorithm_name == "CSP") {
+        agents = CSP().resolve(map, scenarios);
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;
@@ -81,10 +84,10 @@ int main(int argc, char** argv) {
 #endif
 
     /*
-    std::map<std::pair<std::size_t, std::size_t>, GroupAgent> groupAgents = {
-        {{3,3}, GroupAgent(3,3)},
-        {{4,3}, GroupAgent(4,3)},
-        {{6,6}, GroupAgent(6,6)}
+    std::map<AgentCord, Agent> groupAgents = {
+        {{3,3}, Agent(3,3)},
+        {{4,3}, Agent(4,3)},
+        {{6,6}, Agent(6,6)}
     };
 
     auto groups = Grouping().getGroups(groupAgents);

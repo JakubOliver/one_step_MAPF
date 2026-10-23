@@ -6,10 +6,10 @@
 
 #include <chrono>
 
-std::vector<Agent> Algorithm::resolve(const Map &map, const std::vector<Scenario> &scenarios) {
+std::vector<AgentPath> Algorithm::resolve(const Map &map, const std::vector<Scenario> &scenarios) {
     auto start = std::chrono::steady_clock::now();
 
-    std::vector<Agent> agents = resolve_(map, scenarios);
+    std::vector<AgentPath> agents = resolve_(map, scenarios);
 
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

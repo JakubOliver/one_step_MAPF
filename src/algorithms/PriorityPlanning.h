@@ -29,17 +29,17 @@ struct PriorityPlaningState {
 class PriorityPlanning : public Algorithm{
 private:
     std::set<PriorityPlaningState> states;
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t> finalPositions;
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t> latestVisitTimes;
+    std::map<AgentCord, std::size_t> finalPositions;
+    std::map<AgentCord, std::size_t> latestVisitTimes;
     std::size_t latestReservationTime = 0;
 
-    std::vector<Agent> resolve_(
+    std::vector<AgentPath> resolve_(
         const Map& map,
         const std::vector<Scenario>& scenarios
     ) override;
 
-    Agent AStar(const Map& map, const Scenario& scenario) const;
-    void reservePath(const Agent& agent);
+    AgentPath AStar(const Map& map, const Scenario& scenario) const;
+    void reservePath(const AgentPath& agent);
 
     bool hasVertexConflict(
         std::size_t x,
@@ -47,8 +47,8 @@ private:
         std::size_t time
     ) const;
     bool hasTransitionConflict(
-        std::pair<std::size_t, std::size_t> from,
-        std::pair<std::size_t, std::size_t> to,
+        AgentCord from,
+        AgentCord to,
         std::size_t arrivalTime
     ) const;
     bool canOccupyGoalFrom(

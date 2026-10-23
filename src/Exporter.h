@@ -8,13 +8,13 @@
 #include <string>
 #include <vector>
 
-#include "Agent.h"
+#include "AgentPath.h"
 
 constexpr char AGENT_PATH_FILE_NAME[] = "agents.csv";
 
 class Exporter {
 public:
-    static void export_agents(const std::vector<Agent>& agents, const std::string& outputFile = AGENT_PATH_FILE_NAME);
+    static void export_agents(const std::vector<AgentPath>& agents, const std::string& outputFile = AGENT_PATH_FILE_NAME);
 };
 
 
