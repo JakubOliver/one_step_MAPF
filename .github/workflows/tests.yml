@@ -25,7 +25,7 @@ jobs:
     name: Build and test without visualization
     runs-on: ubuntu-24.04
     env:
-      CCACHE_DIR: ${{ runner.temp }}/ccache
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
 
     steps:
       - name: Check out repository
