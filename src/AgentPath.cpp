@@ -2,7 +2,7 @@
 // Created by jakub on 10/6/26.
 //
 
-#include "Agent.h"
+#include "AgentPath.h"
 
 #include <stdexcept>
 #include <utility>

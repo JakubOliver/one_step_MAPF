@@ -2,8 +2,8 @@
 // Created by jakub on 10/6/26.
 //
 
-#ifndef MAPF_AGENT_H
-#define MAPF_AGENT_H
+#ifndef MAPF_AGENT_PATH_H
+#define MAPF_AGENT_PATH_H
 
 #include "AgentCord.h"
 
@@ -25,4 +25,4 @@ public:
 };
 
 
-#endif //MAPF_AGENT_H
+#endif //MAPF_AGENT_PATH_H
