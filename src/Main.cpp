@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <stdexcept>
 
 #include "InputLoader.h"
 #include <argparse/argparse.hpp>
@@ -12,7 +13,9 @@
 #include "algorithms/PriorityPlanning.h"
 #include "algorithms/Grouping.h"
 
+#if MAPF_WITH_VISUALIZER
 #include "../external/mapf-visualizer/src/Visualizer.h"
+#endif
 
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("MAPF");
@@ -31,6 +34,15 @@ int main(int argc, char** argv) {
 
     try {
         program.parse_args(argc, argv);
+
+#if !MAPF_WITH_VISUALIZER
+        if (program.get<bool>("--visualize")) {
+            throw std::runtime_error(
+                "Visualization support is disabled. Reconfigure with "
+                "-DMAPF_BUILD_VISUALIZER=ON to use --visualize."
+            );
+        }
+#endif
     }
     catch (const std::exception& err) {
         std::cerr << err.what() << std::endl;
@@ -58,6 +70,7 @@ int main(int argc, char** argv) {
     auto output_file = program.get<std::string>("--output");
     Exporter::export_agents(agents, output_file);
 
+#if MAPF_WITH_VISUALIZER
     if (program.get<bool>("--visualize")) {
         char* visualizer_argv[] = {
             "mapf-visualizer",
@@ -68,6 +81,7 @@ int main(int argc, char** argv) {
         //TODO: remove constant
         Visualizer::run(3, visualizer_argv);
     }
+#endif
 
     /*
     std::map<AgentCord, Agent> groupAgents = {

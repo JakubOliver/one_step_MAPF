@@ -1,0 +1,107 @@
+name: C++ tests
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/tests.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpp-tests:
+    name: Build and test without visualization
+    runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install --yes \
+            gcc-14 \
+            g++-14 \
+            ninja-build \
+            ccache
+
+      - name: Restore compiler cache
+        id: ccache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: >-
+            ccache-${{ runner.os }}-gcc14-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ccache-${{ runner.os }}-gcc14-
+
+      - name: Initialize compiler cache
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ccache --max-size=2G
+          ccache --zero-stats
+
+      - name: Configure without visualization
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cmake \
+            -S . \
+            -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++-14 \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DMAPF_BUILD_VISUALIZER=OFF \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Show compiler cache statistics
+        run: ccache --show-stats
+
+      - name: Save compiler cache
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      - name: Run tests
+        run: >-
+          ctest
+          --test-dir build
+          --output-on-failure
+          --output-junit "${GITHUB_WORKSPACE}/report.xml"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ctest-report
+          path: report.xml
+          retention-days: 45
+          if-no-files-found: warn
