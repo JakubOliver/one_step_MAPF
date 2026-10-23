@@ -67,7 +67,7 @@ std::vector<Agent> CSP::processGroup(
                 );
 
             //costs.push_back(dx + dy);
-            costs.push_back(2 *(dx + dy) + penalty);
+            costs.push_back(2 *(dx + dy) + penalty); //the smallest penalty can be 1, so we multiply the distance by 2, so it staying is not same as moving from the goal.
         };
 
         add_candidate(agent.position, 1); // Staying in the same place is penalized to encourage movements towards the goal.
