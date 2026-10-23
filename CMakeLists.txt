@@ -7,8 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
+include(CTest)
 
-find_package(PkgConfig REQUIRED)
+option(MAPF_BUILD_VISUALIZER "Build visualization support" ON)
 
 # Cmake is combined from the original MAPF-visualizer and openFrameworks repo Makes and Cmakes
 # and is enriched with few libraries used in this project
@@ -52,85 +53,105 @@ endif()
 
 
 # ============================================================
+# GoogleTest
+# ============================================================
+
+if(BUILD_TESTING)
+    FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.15.2
+            GIT_SHALLOW TRUE
+    )
+
+    FetchContent_MakeAvailable(googletest)
+endif()
+
+
+# ============================================================
 # mapf-visualizer / openFrameworks
 # ============================================================
 
-set(MAPF_VISUALIZER_DIR
-        ${CMAKE_SOURCE_DIR}/external/mapf-visualizer
-)
+if(MAPF_BUILD_VISUALIZER)
+    find_package(PkgConfig REQUIRED)
 
-set(OF_ROOT
-        ${MAPF_VISUALIZER_DIR}/third_party/openFrameworks
-)
+    set(MAPF_VISUALIZER_DIR
+            ${CMAKE_SOURCE_DIR}/external/mapf-visualizer
+    )
 
-
-# ------------------------------------------------------------
-# openFrameworks system dependencies
-# ------------------------------------------------------------
-
-pkg_check_modules(
-        OF_SYSTEM_DEPS
-        REQUIRED
-        IMPORTED_TARGET
-
-        cairo
-        zlib
-
-        gstreamer-app-1.0
-        gstreamer-1.0
-        gstreamer-video-1.0
-        gstreamer-base-1.0
-
-        libudev
-
-        freetype2
-        fontconfig
-
-        sndfile
-        openal
-
-        libcurl
-
-        glfw3
-        rtaudio
-
-        libpulse-simple
-        alsa
-
-        gl
-        glu
-        glew
-
-        gtk+-3.0
-
-        libmpg123
-)
+    set(OF_ROOT
+            ${MAPF_VISUALIZER_DIR}/third_party/openFrameworks
+    )
 
 
-# ------------------------------------------------------------
-# ofxGui
-# ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # openFrameworks system dependencies
+    # ------------------------------------------------------------
 
-file(GLOB OFXGUI_SOURCES
-        CONFIGURE_DEPENDS
-        ${OF_ROOT}/addons/ofxGui/src/*.cpp
-)
+    pkg_check_modules(
+            OF_SYSTEM_DEPS
+            REQUIRED
+            IMPORTED_TARGET
+
+            cairo
+            zlib
+
+            gstreamer-app-1.0
+            gstreamer-1.0
+            gstreamer-video-1.0
+            gstreamer-base-1.0
+
+            libudev
+
+            freetype2
+            fontconfig
+
+            sndfile
+            openal
+
+            libcurl
+
+            glfw3
+            rtaudio
+
+            libpulse-simple
+            alsa
+
+            gl
+            glu
+            glew
+
+            gtk+-3.0
+
+            libmpg123
+    )
 
 
-# ------------------------------------------------------------
-# mapf-visualizer library
-# ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # ofxGui
+    # ------------------------------------------------------------
 
-add_library(
-        mapf_visualizer
-        STATIC
+    file(GLOB OFXGUI_SOURCES
+            CONFIGURE_DEPENDS
+            ${OF_ROOT}/addons/ofxGui/src/*.cpp
+    )
 
-        ${MAPF_VISUALIZER_DIR}/src/Visualizer.cpp
-        ${MAPF_VISUALIZER_DIR}/src/ofApp.cpp
-        ${MAPF_VISUALIZER_DIR}/src/graph.cpp
 
-        ${OFXGUI_SOURCES}
-)
+    # ------------------------------------------------------------
+    # mapf-visualizer library
+    # ------------------------------------------------------------
+
+    add_library(
+            mapf_visualizer
+            STATIC
+
+            ${MAPF_VISUALIZER_DIR}/src/Visualizer.cpp
+            ${MAPF_VISUALIZER_DIR}/src/ofApp.cpp
+            ${MAPF_VISUALIZER_DIR}/src/graph.cpp
+
+            ${OFXGUI_SOURCES}
+    )
+endif()
 
 
 # ------------------------------------------------------------
@@ -143,6 +164,7 @@ set(BUILD_DEPS ON CACHE BOOL "" FORCE)
 # Disable unnecessary components
 set(BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(MAPF_BUILD_TESTING ${BUILD_TESTING})
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(BUILD_FLATZINC OFF CACHE BOOL "" FORCE)
 
@@ -163,99 +185,99 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(or-tools)
 
-#target_link_libraries(MAPF PRIVATE ortools::ortools)
+set(BUILD_TESTING ${MAPF_BUILD_TESTING} CACHE BOOL "Build project tests" FORCE)
+unset(MAPF_BUILD_TESTING)
 
 # ------------------------------------------------------------
 # Include directories
 # ------------------------------------------------------------
 
-target_include_directories(
-        mapf_visualizer
-        PUBLIC
+if(MAPF_BUILD_VISUALIZER)
+    target_include_directories(
+            mapf_visualizer
+            PUBLIC
 
-        # mapf-visualizer
-        ${MAPF_VISUALIZER_DIR}/src
-        ${MAPF_VISUALIZER_DIR}/include
+            # mapf-visualizer
+            ${MAPF_VISUALIZER_DIR}/src
+            ${MAPF_VISUALIZER_DIR}/include
 
-        # openFrameworks core
-        ${OF_ROOT}/libs/openFrameworks
-        ${OF_ROOT}/libs/openFrameworks/3d
-        ${OF_ROOT}/libs/openFrameworks/app
-        ${OF_ROOT}/libs/openFrameworks/communication
-        ${OF_ROOT}/libs/openFrameworks/events
-        ${OF_ROOT}/libs/openFrameworks/gl
-        ${OF_ROOT}/libs/openFrameworks/graphics
-        ${OF_ROOT}/libs/openFrameworks/math
-        ${OF_ROOT}/libs/openFrameworks/sound
-        ${OF_ROOT}/libs/openFrameworks/types
-        ${OF_ROOT}/libs/openFrameworks/utils
-        ${OF_ROOT}/libs/openFrameworks/video
+            # openFrameworks core
+            ${OF_ROOT}/libs/openFrameworks
+            ${OF_ROOT}/libs/openFrameworks/3d
+            ${OF_ROOT}/libs/openFrameworks/app
+            ${OF_ROOT}/libs/openFrameworks/communication
+            ${OF_ROOT}/libs/openFrameworks/events
+            ${OF_ROOT}/libs/openFrameworks/gl
+            ${OF_ROOT}/libs/openFrameworks/graphics
+            ${OF_ROOT}/libs/openFrameworks/math
+            ${OF_ROOT}/libs/openFrameworks/sound
+            ${OF_ROOT}/libs/openFrameworks/types
+            ${OF_ROOT}/libs/openFrameworks/utils
+            ${OF_ROOT}/libs/openFrameworks/video
 
-        # bundled openFrameworks dependencies
-        ${OF_ROOT}/libs/fmod/include
-        ${OF_ROOT}/libs/glm/include
-        ${OF_ROOT}/libs/json/include
-        ${OF_ROOT}/libs/kiss/include
-        ${OF_ROOT}/libs/tess2/include
-        ${OF_ROOT}/libs/utf8/include
+            # bundled openFrameworks dependencies
+            ${OF_ROOT}/libs/fmod/include
+            ${OF_ROOT}/libs/glm/include
+            ${OF_ROOT}/libs/json/include
+            ${OF_ROOT}/libs/kiss/include
+            ${OF_ROOT}/libs/tess2/include
+            ${OF_ROOT}/libs/utf8/include
 
-        # addons
-        ${OF_ROOT}/addons/ofxGui/src
-)
-
-
-# ------------------------------------------------------------
-# Compile definitions used by openFrameworks on Linux
-# ------------------------------------------------------------
-
-target_compile_definitions(
-        mapf_visualizer
-        PUBLIC
-
-        GCC_HAS_REGEX
-        OF_USING_GTK
-        OF_USING_MPG123
-)
+            # addons
+            ${OF_ROOT}/addons/ofxGui/src
+    )
 
 
-# ------------------------------------------------------------
-# openFrameworks + bundled + Linux libraries
-# ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # Compile definitions used by openFrameworks on Linux
+    # ------------------------------------------------------------
 
-target_link_libraries(
-        mapf_visualizer
-        PUBLIC
+    target_compile_definitions(
+            mapf_visualizer
+            PUBLIC
 
-        # openFrameworks core
-        ${OF_ROOT}/libs/openFrameworksCompiled/lib/linux64/libopenFrameworks.a
+            GCC_HAS_REGEX
+            OF_USING_GTK
+            OF_USING_MPG123
+    )
 
-        # bundled static libraries used by openFrameworks
-        ${OF_ROOT}/libs/kiss/lib/linux64/libkiss.a
-        ${OF_ROOT}/libs/tess2/lib/linux64/libtess2.a
 
-        # pkg-config dependencies
-        PkgConfig::OF_SYSTEM_DEPS
+    # ------------------------------------------------------------
+    # openFrameworks + bundled + Linux libraries
+    # ------------------------------------------------------------
 
-        # Linux platform libraries
-        glut
+    target_link_libraries(
+            mapf_visualizer
+            PUBLIC
 
-        X11
-        Xrandr
-        Xxf86vm
-        Xi
-        Xcursor
-        Xinerama
+            # openFrameworks core
+            ${OF_ROOT}/libs/openFrameworksCompiled/lib/linux64/libopenFrameworks.a
 
-        dl
-        pthread
+            # bundled static libraries used by openFrameworks
+            ${OF_ROOT}/libs/kiss/lib/linux64/libkiss.a
+            ${OF_ROOT}/libs/tess2/lib/linux64/libtess2.a
 
-        freeimage
-        pugixml
-        uriparser
+            # pkg-config dependencies
+            PkgConfig::OF_SYSTEM_DEPS
 
-        ortools::ortools
-)
+            # Linux platform libraries
+            glut
 
+            X11
+            Xrandr
+            Xxf86vm
+            Xi
+            Xcursor
+            Xinerama
+
+            dl
+            pthread
+
+            freeimage
+            pugixml
+            uriparser
+    )
+endif()
 
 # ============================================================
 # MAPF
@@ -263,14 +285,39 @@ target_link_libraries(
 
 file(
         GLOB_RECURSE
-        SRC_ALL
+        MAPF_CORE_SOURCES
         CONFIGURE_DEPENDS
         src/*.cpp
 )
 
+list(
+        REMOVE_ITEM
+        MAPF_CORE_SOURCES
+        ${CMAKE_SOURCE_DIR}/src/Main.cpp
+)
+
+add_library(
+        mapf_core
+        STATIC
+        ${MAPF_CORE_SOURCES}
+)
+
+target_include_directories(
+        mapf_core
+        PUBLIC
+        ${CMAKE_SOURCE_DIR}/src
+)
+
+target_link_libraries(
+        mapf_core
+        PRIVATE
+        csv
+        ortools::ortools
+)
+
 add_executable(
         MAPF
-        ${SRC_ALL}
+        src/Main.cpp
 )
 
 target_link_libraries(
@@ -278,36 +325,44 @@ target_link_libraries(
         PRIVATE
 
         argparse
-        csv
-        mapf_visualizer
+        mapf_core
 )
+
+target_compile_definitions(
+        MAPF
+        PRIVATE
+        MAPF_WITH_VISUALIZER=$<BOOL:${MAPF_BUILD_VISUALIZER}>
+)
+
+if(MAPF_BUILD_VISUALIZER)
+    target_link_libraries(MAPF PRIVATE mapf_visualizer)
+endif()
 
 
 # ============================================================
 # Tests
 # ============================================================
 
-#include(CTest)
+if(BUILD_TESTING)
+    file(
+            GLOB_RECURSE
+            TEST_SOURCES
+            CONFIGURE_DEPENDS
+            tests/*.cpp
+    )
 
-#if(BUILD_TESTING)
-#    add_executable(
-#            priority_planning_tests
-#            tests/PriorityPlaningTests.cpp
-#            src/Agent.cpp
-#            src/InputLoader.cpp
-#            src/Map.cpp
-#            src/Scenario.cpp
-#            src/algorithms/PriorityPlaning.cpp
-#    )
-#
-#    target_link_libraries(
-#            priority_planning_tests
-#            PRIVATE
-#            csv
-#    )
-#
-#    add_test(
-#            NAME priority_planning_tests
-#            COMMAND priority_planning_tests
-#    )
-#endif()
+    add_executable(
+            mapf_tests
+            ${TEST_SOURCES}
+    )
+
+    target_link_libraries(
+            mapf_tests
+            PRIVATE
+            mapf_core
+            GTest::gtest_main
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(mapf_tests)
+endif()
