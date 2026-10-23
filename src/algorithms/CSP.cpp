@@ -148,28 +148,6 @@ std::vector<Agent> CSP::processGroup(
     return updated_agents;
 }
 
-void CSP::processGroup_mocked() {
-    const Map map{
-        .type = "mock",
-        .height = 20,
-        .width = 20,
-        .map = {
-            {{0, 0}, false},
-            {{0, 1}, false},
-            {{1, 0}, false},
-            {{1, 1}, false},
-            {{2, 0}, false}
-        }
-    };
-
-    std::vector<Agent> agents = {
-        {{0, 0}, {10, 10}},
-        {{1, 0}, {10, 11}}
-    };
-
-    CSP::processGroup(agents, map);
-}
-
 std::vector<AgentPath>CSP::resolve_(
     const Map& map,
     const std::vector<Scenario>& scenarios
