@@ -21,8 +21,6 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
-//TODO: SOmewhere is issue, that in the CSP two agents can use same edge at the same time.
-
 int64_t from_pos_to_index(
     AgentCord position,
     std::size_t map_width
@@ -108,11 +106,29 @@ std::vector<Agent> CSP::processGroup(
     // Enforces No vertex collisions
     cp_model.AddAllDifferent(agents_vars);
 
+    // Prevents two agents from swapping their current positions in one step.
+    for (std::size_t first = 0; first < agents.size(); ++first) {
+        for (std::size_t second = first + 1; second < agents.size(); ++second) {
+            const std::vector<IntVar> pair_vars = {
+                agents_vars[first],
+                agents_vars[second]
+            };
+            auto forbidden_swap = cp_model.AddForbiddenAssignments(pair_vars);
+
+            forbidden_swap.AddTuple({
+                from_pos_to_index(agents[second].position, map.width),
+                from_pos_to_index(agents[first].position, map.width)
+            });
+        }
+    }
+
     // Minimize total fitness.
     cp_model.Minimize(objective);
 
     const CpSolverResponse response = Solve(cp_model.Build());
 
+    //This sholud not happnen, because if the input data are correct, then 
+    // there is always a solution, that all agents stay, in ther current possition
     if (response.status() != CpSolverStatus::OPTIMAL &&
         response.status() != CpSolverStatus::FEASIBLE) {
         std::cout << "No solution found\n";
