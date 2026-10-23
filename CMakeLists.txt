@@ -285,14 +285,39 @@ endif()
 
 file(
         GLOB_RECURSE
-        SRC_ALL
+        MAPF_CORE_SOURCES
         CONFIGURE_DEPENDS
         src/*.cpp
 )
 
+list(
+        REMOVE_ITEM
+        MAPF_CORE_SOURCES
+        ${CMAKE_SOURCE_DIR}/src/Main.cpp
+)
+
+add_library(
+        mapf_core
+        STATIC
+        ${MAPF_CORE_SOURCES}
+)
+
+target_include_directories(
+        mapf_core
+        PUBLIC
+        ${CMAKE_SOURCE_DIR}/src
+)
+
+target_link_libraries(
+        mapf_core
+        PRIVATE
+        csv
+        ortools::ortools
+)
+
 add_executable(
         MAPF
-        ${SRC_ALL}
+        src/Main.cpp
 )
 
 target_link_libraries(
@@ -300,8 +325,7 @@ target_link_libraries(
         PRIVATE
 
         argparse
-        csv
-        ortools::ortools
+        mapf_core
 )
 
 target_compile_definitions(
@@ -320,14 +344,22 @@ endif()
 # ============================================================
 
 if(BUILD_TESTING)
+    file(
+            GLOB_RECURSE
+            TEST_SOURCES
+            CONFIGURE_DEPENDS
+            tests/*.cpp
+    )
+
     add_executable(
             mapf_tests
-            tests/SmokeTests.cpp
+            ${TEST_SOURCES}
     )
 
     target_link_libraries(
             mapf_tests
             PRIVATE
+            mapf_core
             GTest::gtest_main
     )
 
