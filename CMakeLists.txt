@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
+include(CTest)
 
 find_package(PkgConfig REQUIRED)
 
@@ -48,6 +49,22 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
             INTERFACE
             $<$<CONFIG:Debug>:--coverage>
     )
+endif()
+
+
+# ============================================================
+# GoogleTest
+# ============================================================
+
+if(BUILD_TESTING)
+    FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.15.2
+            GIT_SHALLOW TRUE
+    )
+
+    FetchContent_MakeAvailable(googletest)
 endif()
 
 
@@ -143,6 +160,7 @@ set(BUILD_DEPS ON CACHE BOOL "" FORCE)
 # Disable unnecessary components
 set(BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(MAPF_BUILD_TESTING ${BUILD_TESTING})
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(BUILD_FLATZINC OFF CACHE BOOL "" FORCE)
 
@@ -162,6 +180,9 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(or-tools)
+
+set(BUILD_TESTING ${MAPF_BUILD_TESTING} CACHE BOOL "Build project tests" FORCE)
+unset(MAPF_BUILD_TESTING)
 
 #target_link_libraries(MAPF PRIVATE ortools::ortools)
 
@@ -287,27 +308,18 @@ target_link_libraries(
 # Tests
 # ============================================================
 
-#include(CTest)
+if(BUILD_TESTING)
+    add_executable(
+            mapf_tests
+            tests/SmokeTests.cpp
+    )
 
-#if(BUILD_TESTING)
-#    add_executable(
-#            priority_planning_tests
-#            tests/PriorityPlaningTests.cpp
-#            src/Agent.cpp
-#            src/InputLoader.cpp
-#            src/Map.cpp
-#            src/Scenario.cpp
-#            src/algorithms/PriorityPlaning.cpp
-#    )
-#
-#    target_link_libraries(
-#            priority_planning_tests
-#            PRIVATE
-#            csv
-#    )
-#
-#    add_test(
-#            NAME priority_planning_tests
-#            COMMAND priority_planning_tests
-#    )
-#endif()
+    target_link_libraries(
+            mapf_tests
+            PRIVATE
+            GTest::gtest_main
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(mapf_tests)
+endif()
