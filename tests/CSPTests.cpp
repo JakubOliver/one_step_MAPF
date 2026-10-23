@@ -24,6 +24,21 @@ protected:
         }
         throw std::runtime_error("Agent with the specified ID not found");
     }
+
+    static void validateMovement(CSP& csp, const Map& map, std::vector<Agent>& agents, std::vector<std::vector<AgentCord>>& expectedPath){
+        for (std::size_t i = 0; i < expectedPath.size(); ++i) {
+            auto agentsAfterRound = processGroup(csp, agents, map);
+
+            for (std::size_t angetId = 0; angetId < agents.size(); ++angetId) {
+                auto agent = getAgentById(agentsAfterRound, angetId);
+
+                ASSERT_EQ(agent.position, expectedPath[i][angetId]) << "agent " << angetId << " at iteration " << i;
+                ASSERT_EQ(agent.id, angetId);
+            }
+
+            agents = std::move(agentsAfterRound);
+        }
+    }
 };
 
 TEST_F(CSPTest, MovesAgentsTowardGoalsWithoutVertexCollision) {
@@ -120,6 +135,7 @@ TEST_F(CSPTest, StayAtSamePosition) {
 }
 
 TEST_F(CSPTest, AgentMovesTowardsTheGoal) {
+    // A _ G
     const Map map{
         .type = "test",
         .height = 1,
@@ -133,26 +149,19 @@ TEST_F(CSPTest, AgentMovesTowardsTheGoal) {
     std::vector<Agent> agents = {
         {{0, 0}, {2, 0}},
     };
-    std::vector<AgentCord> expectedPath = {
-        {1, 0},
-        {2, 0},
-        {2, 0}
+    std::vector<std::vector<AgentCord>> expectedPath = {
+        {{1, 0}},
+        {{2, 0}},
+        {{2, 0}}
     };
     CSP csp;
 
-    for (std::size_t i = 0; i < expectedPath.size(); ++i) {
-        auto agentsAfterRound = processGroup(csp, agents, map);
-
-        ASSERT_EQ(agentsAfterRound.size(), 1);
-        ASSERT_EQ(agentsAfterRound[0].position, expectedPath[i]);
-        ASSERT_EQ(agentsAfterRound[0].goal, AgentCord(2, 0));
-        ASSERT_EQ(agentsAfterRound[0].id, 0);
-
-        agents = std::move(agentsAfterRound);
-    }
+    CSPTest::validateMovement(csp, map, agents, expectedPath);
 }
 
 TEST_F(CSPTest, AgentsMovesTowardsTheGoal) {
+    // A0 _ G0 
+    // A1 _ G1
     const Map map{
         .type = "test",
         .height = 2,
@@ -177,17 +186,36 @@ TEST_F(CSPTest, AgentsMovesTowardsTheGoal) {
     };
     CSP csp;
 
-    for (std::size_t i = 0; i < expectedPath.size(); ++i) {
-        auto agentsAfterRound = processGroup(csp, agents, map);
+    CSPTest::validateMovement(csp, map, agents, expectedPath);
+}
 
-        for (std::size_t angetId = 0; angetId < agents.size(); ++angetId) {
-            auto agent = getAgentById(agentsAfterRound, angetId);
-
-            ASSERT_EQ(agentsAfterRound.size(), 2);
-            ASSERT_EQ(agent.position, expectedPath[i][angetId]);
-            ASSERT_EQ(agent.id, angetId);
+TEST_F(CSPTest, AgentsMovesTowardsTheGoal2) {
+    // A0 # G1
+    // A1 _ G0
+    const Map map{
+        .type = "test",
+        .height = 2,
+        .width = 3,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, true},
+            {{2, 0}, false},
+            {{0, 1}, false},
+            {{1, 1}, false},
+            {{2, 1}, false}
         }
+    };
+    std::vector<Agent> agents = {
+        {{0, 0}, {2, 1}},
+        {{0, 1}, {2, 0}}
+    };
+    std::vector<std::vector<AgentCord>> expectedPath = {
+        {{0, 1}, {1, 1}},
+        {{1, 1}, {2, 1}},
+        {{2, 1}, {2, 0}},
+        {{2, 1}, {2, 0}},
+    };
+    CSP csp;
 
-        agents = std::move(agentsAfterRound);
-    }
+    CSPTest::validateMovement(csp, map, agents, expectedPath);
 }
