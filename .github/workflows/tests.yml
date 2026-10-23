@@ -24,6 +24,8 @@ jobs:
   cpp-tests:
     name: Build and test without visualization
     runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ runner.temp }}/ccache
 
     steps:
       - name: Check out repository
@@ -38,7 +40,26 @@ jobs:
           sudo apt-get install --yes \
             gcc-14 \
             g++-14 \
-            ninja-build
+            ninja-build \
+            ccache
+
+      - name: Restore compiler cache
+        id: ccache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: >-
+            ccache-${{ runner.os }}-gcc14-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ccache-${{ runner.os }}-gcc14-
+
+      - name: Initialize compiler cache
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ccache --max-size=2G
+          ccache --zero-stats
 
       - name: Configure without visualization
         shell: bash
@@ -52,11 +73,22 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_COMPILER=gcc-14 \
             -DCMAKE_CXX_COMPILER=g++-14 \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DMAPF_BUILD_VISUALIZER=OFF \
             -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build --parallel 2
+        run: cmake --build build --parallel
+
+      - name: Show compiler cache statistics
+        run: ccache --show-stats
+
+      - name: Save compiler cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
       - name: Run tests
         run: >-
