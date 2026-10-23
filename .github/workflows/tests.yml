@@ -54,6 +54,7 @@ jobs:
             ccache-${{ runner.os }}-gcc14-
 
       - name: Initialize compiler cache
+        id: ccache-initialize
         shell: bash
         run: |
           set -euo pipefail
@@ -82,9 +83,11 @@ jobs:
         run: cmake --build build --parallel
 
       - name: Show compiler cache statistics
+        if: always() && steps.ccache-initialize.outcome == 'success'
         run: ccache --show-stats
 
       - name: Save compiler cache
+        if: always() && steps.ccache-initialize.outcome == 'success'
         uses: actions/cache/save@v6
         with:
           path: ${{ env.CCACHE_DIR }}

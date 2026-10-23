@@ -10,19 +10,19 @@
 
 namespace {
 
-using Position = std::pair<std::size_t, std::size_t>;
+using Position = AgentCord;
 using PositionGroup = std::vector<Position>;
 using PositionGroups = std::vector<PositionGroup>;
 
-std::map<Position, GroupAgent> makeAgents(
+std::map<Position, Agent> makeAgents(
     const std::vector<Position>& positions
 ) {
-    std::map<Position, GroupAgent> agents;
+    std::map<Position, Agent> agents;
 
     for (const auto& position : positions) {
         agents.emplace(
             position,
-            GroupAgent(position, Position{0, 0})
+            Agent(position, Position{0, 0})
         );
     }
 
@@ -30,7 +30,7 @@ std::map<Position, GroupAgent> makeAgents(
 }
 
 PositionGroups canonicalizeGroups(
-    const std::vector<std::vector<GroupAgent>>& groups
+    const std::vector<std::vector<Agent>>& groups
 ) {
     PositionGroups positions;
     positions.reserve(groups.size());
