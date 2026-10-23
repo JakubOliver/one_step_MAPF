@@ -103,4 +103,5 @@ jobs:
         with:
           name: ctest-report
           path: report.xml
+          retention-days: 45
           if-no-files-found: warn
