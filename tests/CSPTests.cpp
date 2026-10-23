@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <iostream>
 #include <vector>
 
 #include "algorithms/CSP.h"
@@ -41,4 +42,39 @@ TEST_F(CSPTest, MovesAgentsTowardGoalsWithoutVertexCollision) {
     EXPECT_EQ(updatedAgents[0].position, AgentCord(1, 0));
     EXPECT_EQ(updatedAgents[1].position, AgentCord(1, 1));
     EXPECT_NE(updatedAgents[0].position, updatedAgents[1].position);
+}
+
+TEST_F(CSPTest, RejectsSwapInTwoCellMap) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false}
+        }
+    };
+    const std::vector<Agent> agents = {
+        {{0, 0}, {1, 0}},
+        {{1, 0}, {0, 0}}
+    };
+    CSP csp;
+
+    const auto updatedAgents = processGroup(csp, agents, map);
+    std::cout << "Updated agents: ";
+
+    for (const auto& agent : updatedAgents) {
+        std::cout << agent.position.first << ", " << agent.position.second << "; ";
+    }
+
+    for (const auto& agent : updatedAgents) {
+        if (agent.position == AgentCord(0, 0)) {
+            EXPECT_EQ(agent.goal, AgentCord(1, 0));
+        } else if (agent.position == AgentCord(1, 0)) {
+            EXPECT_EQ(agent.goal, AgentCord(0, 0));
+        } else {
+            FAIL() << "Unexpected agent position: (" << agent.position.first
+                   << ", " << agent.position.second << ")";
+        }
+    }
 }
