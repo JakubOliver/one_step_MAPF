@@ -13,9 +13,14 @@
 #include <array>
 #include <map>
 #include <ostream>
+#include <atomic>
+
+using AgentId = std::size_t;
 
 struct Agent {
 private:
+    inline static std::atomic<AgentId> nextId{0};
+
     static constexpr std::array<std::pair<int, int>, 4> canMoves = {{
         {1, 0},
         {-1, 0},
@@ -32,6 +37,7 @@ private:
 public:
     AgentCord position;
     AgentCord goal;
+    const AgentId id;
 
     Agent(std::size_t x, std::size_t y) : Agent(x, y, 0, 0) {}
     Agent(
@@ -40,7 +46,7 @@ public:
         std::size_t gx,
         std::size_t gy
     ) : Agent(AgentCord{x, y}, AgentCord{gx, gy}) {}
-    Agent(AgentCord pos, AgentCord g) : position(pos), goal(g) {}
+    Agent(AgentCord pos, AgentCord g) : position(pos), goal(g), id(nextId++) {}
 
     std::generator<AgentCord> getNeighbors() const;
     std::generator<AgentCord> getMoveTo() const;

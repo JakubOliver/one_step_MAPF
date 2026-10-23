@@ -61,17 +61,14 @@ TEST_F(CSPTest, RejectsSwapInTwoCellMap) {
     CSP csp;
 
     const auto updatedAgents = processGroup(csp, agents, map);
-    std::cout << "Updated agents: ";
-
-    for (const auto& agent : updatedAgents) {
-        std::cout << agent.position.first << ", " << agent.position.second << "; ";
-    }
 
     for (const auto& agent : updatedAgents) {
         if (agent.position == AgentCord(0, 0)) {
             EXPECT_EQ(agent.goal, AgentCord(1, 0));
+            EXPECT_EQ(agent.id, 0);
         } else if (agent.position == AgentCord(1, 0)) {
             EXPECT_EQ(agent.goal, AgentCord(0, 0));
+            EXPECT_EQ(agent.id, 1);
         } else {
             FAIL() << "Unexpected agent position: (" << agent.position.first
                    << ", " << agent.position.second << ")";
