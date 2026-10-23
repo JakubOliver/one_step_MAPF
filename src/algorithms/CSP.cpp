@@ -45,7 +45,7 @@ std::vector<Agent> CSP::processGroup(
         std::vector<int64_t> Q_pos;
         std::vector<int64_t> costs;
 
-        auto add_candidate = [&](const auto& pos) {
+        auto add_candidate = [&](const auto& pos, std::size_t penalty = 0) {
             if (!map.isInBounds(pos) || map.isBlocked(pos)) {
                 return;
             }
@@ -66,10 +66,11 @@ std::vector<Agent> CSP::processGroup(
                     static_cast<int64_t>(agent.goal.second)
                 );
 
-            costs.push_back(dx + dy);
+            //costs.push_back(dx + dy);
+            costs.push_back(2 *(dx + dy) + penalty);
         };
 
-        add_candidate(agent.position);
+        add_candidate(agent.position, 1); // Staying in the same place is penalized to encourage movements towards the goal.
 
         for (const auto& pos : agent.getMoveTo()) {
             add_candidate(pos);
