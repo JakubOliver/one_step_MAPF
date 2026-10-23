@@ -2,6 +2,8 @@ name: C++ tests
 
 on:
   push:
+    branches:
+      - "main"
     paths:
       - "src/**"
       - "tests/**"
