@@ -3,8 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "Agent.h"
 #include "algorithms/CSP.h"
-#include "algorithms/Grouping.h"
 
 class CSPTest : public ::testing::Test {
 protected:

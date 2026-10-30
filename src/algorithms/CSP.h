@@ -5,8 +5,8 @@
 #ifndef MAPF_CSP_H
 #define MAPF_CSP_H
 
+#include "../Agent.h"
 #include "Algorithm.h"
-#include "Grouping.h"
 
 class CSPTest;
 

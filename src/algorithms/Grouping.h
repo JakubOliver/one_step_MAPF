@@ -5,66 +5,10 @@
 #ifndef MAPF_GROUPING_H
 #define MAPF_GROUPING_H
 
-#include "../AgentCord.h"
+#include "../Agent.h"
 
-#include <cstddef>
-#include <vector>
-#include <generator>
-#include <array>
 #include <map>
-#include <ostream>
-#include <atomic>
-
-using AgentId = std::size_t;
-
-struct Agent {
-private:
-    inline static std::atomic<AgentId> nextId{0};
-
-    static constexpr std::array<std::pair<int, int>, 4> canMoves = {{
-        {1, 0},
-        {-1, 0},
-        {0, 1},
-        {0, -1}
-    }};
-
-    static constexpr std::array<std::pair<int, int>, 4> diagMoves = {{
-        {1, 1},
-        {-1, -1},
-        {-1, 1},
-        {1, -1}
-    }};
-public:
-    AgentCord position;
-    AgentCord goal;
-    const AgentId id;
-
-    Agent(std::size_t x, std::size_t y) : Agent(x, y, 0, 0) {}
-    Agent(
-        std::size_t x,
-        std::size_t y,
-        std::size_t gx,
-        std::size_t gy
-    ) : Agent(AgentCord{x, y}, AgentCord{gx, gy}) {}
-    Agent(AgentCord pos, AgentCord g) : position(pos), goal(g), id(nextId++) {}
-
-    std::generator<AgentCord> getNeighbors() const;
-    std::generator<AgentCord> getMoveTo() const;
-
-    bool isAtGoal() const {
-        return position == goal;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const Agent& agent) {
-        os << "Agent: ("
-           << agent.position.first << ", " << agent.position.second
-           << ") -> ("
-           << agent.goal.first << ", " << agent.goal.second
-           << ')';
-
-        return os;
-    }
-};
+#include <vector>
 
 class Grouping {
 public:

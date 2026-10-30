@@ -10,10 +10,19 @@ ctest --preset debug
 
 VS Code uses the same `debug` preset automatically. On the first configure,
 CMake downloads the declared third-party dependencies, so it can take several
-minutes. The build is written to `out/build/debug`; old `build` and
-`cmake-build-*` directories are not used by VS Code.
+minutes. The build is written to `out/build/debug`.
 
 The test suite uses GoogleTest and is run through CTest.
+
+```sh
+ctest --preset debug
+```
+
+or
+
+```sh
+ctest --preset release
+```
 
 To build without the map visualizer and its openFrameworks dependencies, use:
 
