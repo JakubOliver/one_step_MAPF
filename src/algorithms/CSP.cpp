@@ -21,6 +21,10 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
+CSP::CSP(std::function<bool()> interruption_requested)
+    : interruption_requested(std::move(interruption_requested)) {
+}
+
 int64_t from_pos_to_index(
     AgentCord position,
     std::size_t map_width
@@ -34,6 +38,8 @@ std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
     const Map& map
 ) {
+    group_solve_interrupted = false;
+
     CpModelBuilder cp_model;
 
     std::vector<IntVar> agents_vars;
@@ -126,13 +132,30 @@ std::vector<Agent> CSP::processGroup(
     // Minimize total fitness.
     cp_model.Minimize(objective);
 
-    const CpSolverResponse response = Solve(cp_model.Build());
+    // NOTE: To generate one solution for successively worse fitness value,
+    // solve repeatedly and add objective >= previous_objective + 1. 
+    // Butt skips over solutions with same fitness, so TODO for me to check 
+    // how close the fitness are and if it makeses sense to skipp etc.
+    // For note better sollution sould be to desable found solution and 
+    // run the solver again, but this introduces overhead etc. 
 
-    //This sholud not happnen, because if the input data are correct, then 
-    // there is always a solution, that all agents stay, in ther current possition
-    if (response.status() != CpSolverStatus::OPTIMAL &&
-        response.status() != CpSolverStatus::FEASIBLE) {
-        std::cout << "No solution found\n";
+    SatParameters parameters;
+    parameters.set_catch_sigint_signal(false);
+
+    const CpSolverResponse response = SolveWithParameters(
+        cp_model.Build(),
+        parameters
+    );
+
+    // A valid group always has the solution in which all agents stay in place.
+    // A non-optimal response therefore means that the search was interrupted.
+    if (response.status() != CpSolverStatus::OPTIMAL) {
+        group_solve_interrupted = true;
+
+        if (response.status() != CpSolverStatus::FEASIBLE) {
+            std::cerr << "CSP group solve stopped before finding a solution\n";
+        }
+
         return {};
     }
 
@@ -212,15 +235,26 @@ std::vector<AgentPath>CSP::resolve_(
             }
         )
     ) {
+        if (interruption_requested()) {
+            std::cerr << "CSP interrupted; returning paths computed so far\n";
+            break;
+        }
+
         const auto groups = grouping.getGroups(agents);
         std::map<AgentCord, Agent> updated_agents;
         std::map<AgentCord, std::size_t> updated_agent_indices;
+        bool iteration_interrupted = false;
 
         for (const auto& group : groups) {
             const auto processed_group = processGroup(
                 group,
                 map
             );
+
+            if (group_solve_interrupted) {
+                iteration_interrupted = true;
+                break;
+            }
 
             for (std::size_t i = 0; i < group.size(); ++i) {
                 const auto agent_index = agent_indices.at(
@@ -238,12 +272,20 @@ std::vector<AgentPath>CSP::resolve_(
                     agent_it->first,
                     agent_index
                 );
-                paths[agent_index].push_back(processed_agent.position);
             }
+        }
+
+        if (iteration_interrupted) {
+            std::cerr << "CSP interrupted; returning paths computed so far\n";
+            break;
         }
 
         agents = std::move(updated_agents);
         agent_indices = std::move(updated_agent_indices);
+
+        for (const auto& [position, agent_index] : agent_indices) {
+            paths[agent_index].push_back(position);
+        }
 
         iteration++;
         const auto agents_at_goal = std::count_if(

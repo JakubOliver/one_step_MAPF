@@ -5,6 +5,8 @@
 #ifndef MAPF_CSP_H
 #define MAPF_CSP_H
 
+#include <functional>
+
 #include "../Agent.h"
 #include "Algorithm.h"
 
@@ -13,6 +15,11 @@ class CSPTest;
 class CSP : public Algorithm {
 private:
     friend class CSPTest;
+
+    std::function<bool()> interruption_requested = []() {
+        return false;
+    }; //TODO: add condition that this is present only in debug mode
+    bool group_solve_interrupted = false;
 
     std::vector<AgentPath> resolve_(
         const Map& map,
@@ -26,6 +33,7 @@ private:
 
 public:
     CSP() = default;
+    explicit CSP(std::function<bool()> interruption_requested);
 };
 
 #endif //MAPF_CSP_H

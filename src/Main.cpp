@@ -11,6 +11,7 @@
 #include "Exporter.h"
 #include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
+#include "util/InterruptHandler.h"
 
 #include "validation/Validator.h"
 
@@ -65,14 +66,19 @@ int main(int argc, char** argv) {
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
     } else if (algorithm_name == "CSP") {
-        agents = CSP().resolve(map, scenarios);
+        util::InterruptHandler interrupt_handler;
+        agents = CSP(
+            [&interrupt_handler]() {
+                return interrupt_handler.wasInterrupted();
+            }
+        ).resolve(map, scenarios);
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;
     }
 
     auto output_file = program.get<std::string>("--output");
-    Exporter::export_agents(agents, output_file);
+    Exporter::export_agents(agents, scenarios, output_file);
 
     if (program.get<bool>("--validate")) {
         if (Validator::validate(map, scenarios, agents)) {
@@ -85,8 +91,9 @@ int main(int argc, char** argv) {
 
 #if MAPF_WITH_VISUALIZER
     if (program.get<bool>("--visualize")) {
+        char visualizer_name[] = "mapf-visualizer";
         char* visualizer_argv[] = {
-            "mapf-visualizer",
+            visualizer_name,
             map_file.data(),
             output_file.data()
         };

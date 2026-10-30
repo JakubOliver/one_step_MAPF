@@ -9,12 +9,17 @@
 #include <vector>
 
 #include "AgentPath.h"
+#include "Scenario.h"
 
 constexpr char AGENT_PATH_FILE_NAME[] = "agents.csv";
 
 class Exporter {
 public:
-    static void export_agents(const std::vector<AgentPath>& agents, const std::string& outputFile = AGENT_PATH_FILE_NAME);
+    static void export_agents(
+        const std::vector<AgentPath>& agents,
+        const std::vector<Scenario>& scenarios,
+        const std::string& outputFile = AGENT_PATH_FILE_NAME
+    );
 };
 
 
