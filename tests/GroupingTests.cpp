@@ -117,4 +117,19 @@ TEST(GroupingTest, SeparatesMixedConnectedAndIsolatedAgents) {
     EXPECT_EQ(canonicalizeGroups(groups), expected);
 }
 
+TEST(GroupingTest, MergesGroupsConnectedByLaterAgent) {
+    // Gives frist and second cord different groups, but third connects them
+    const std::vector<Position> positions = {
+        {0, 2},
+        {2, 0},
+        {2, 2}
+    };
+    const auto agents = makeAgents(positions);
+
+    const auto groups = Grouping().getGroups(agents);
+
+    const auto expected = canonicalizeExpected({positions});
+    EXPECT_EQ(canonicalizeGroups(groups), expected);
+}
+
 }
