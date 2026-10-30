@@ -126,6 +126,13 @@ std::vector<Agent> CSP::processGroup(
     // Minimize total fitness.
     cp_model.Minimize(objective);
 
+    // NOTE: To generate one solution for successively worse fitness value,
+    // solve repeatedly and add objective >= previous_objective + 1. 
+    // Butt skips over solutions with same fitness, so TODO for me to check 
+    // how close the fitness are and if it makeses sense to skipp etc.
+    // For note better sollution sould be to desable found solution and 
+    // run the solver again, but this introduces overhead etc. 
+
     const CpSolverResponse response = Solve(cp_model.Build());
 
     //This sholud not happnen, because if the input data are correct, then 
