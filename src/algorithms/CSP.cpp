@@ -139,7 +139,13 @@ std::vector<Agent> CSP::processGroup(
     // For note better sollution sould be to desable found solution and 
     // run the solver again, but this introduces overhead etc. 
 
-    const CpSolverResponse response = Solve(cp_model.Build());
+    SatParameters parameters;
+    parameters.set_catch_sigint_signal(false);
+
+    const CpSolverResponse response = SolveWithParameters(
+        cp_model.Build(),
+        parameters
+    );
 
     // A valid group always has the solution in which all agents stay in place.
     // A non-optimal response therefore means that the search was interrupted.
