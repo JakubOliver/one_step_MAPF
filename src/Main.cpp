@@ -12,6 +12,8 @@
 #include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
 
+#include "validation/Validator.h"
+
 #if MAPF_WITH_VISUALIZER
 #include "../external/mapf-visualizer/src/Visualizer.h"
 #endif
@@ -30,6 +32,9 @@ int main(int argc, char** argv) {
         .implicit_value(true);
     program.add_argument("--output")
         .default_value(AGENT_PATH_FILE_NAME);
+    program.add_argument("--validate")
+        .default_value(false)
+        .implicit_value(true);
 
     try {
         program.parse_args(argc, argv);
@@ -68,6 +73,15 @@ int main(int argc, char** argv) {
 
     auto output_file = program.get<std::string>("--output");
     Exporter::export_agents(agents, output_file);
+
+    if (program.get<bool>("--validate")) {
+        if (Validator::validate(map, scenarios, agents)) {
+            std::cout << "Validation successful." << std::endl;
+        } else {
+            std::cerr << "Validation failed." << std::endl;
+            return 1;
+        }
+    }
 
 #if MAPF_WITH_VISUALIZER
     if (program.get<bool>("--visualize")) {
