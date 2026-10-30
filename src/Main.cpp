@@ -11,7 +11,6 @@
 #include "Exporter.h"
 #include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
-#include "algorithms/Grouping.h"
 
 #if MAPF_WITH_VISUALIZER
 #include "../external/mapf-visualizer/src/Visualizer.h"

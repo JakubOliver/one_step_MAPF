@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "Agent.h"
 #include "algorithms/Grouping.h"
 
 namespace {
