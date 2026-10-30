@@ -11,6 +11,7 @@
 #include "Exporter.h"
 #include "algorithms/CSP.h"
 #include "algorithms/PriorityPlanning.h"
+#include "util/InterruptHandler.h"
 
 #include "validation/Validator.h"
 
@@ -90,8 +91,9 @@ int main(int argc, char** argv) {
 
 #if MAPF_WITH_VISUALIZER
     if (program.get<bool>("--visualize")) {
+        char visualizer_name[] = "mapf-visualizer";
         char* visualizer_argv[] = {
-            "mapf-visualizer",
+            visualizer_name,
             map_file.data(),
             output_file.data()
         };

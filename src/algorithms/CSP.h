@@ -5,6 +5,8 @@
 #ifndef MAPF_CSP_H
 #define MAPF_CSP_H
 
+#include <functional>
+
 #include "../Agent.h"
 #include "Algorithm.h"
 
