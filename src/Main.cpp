@@ -65,7 +65,12 @@ int main(int argc, char** argv) {
     if (algorithm_name == "PriorityPlanning") {
         agents = PriorityPlanning().resolve(map, scenarios);
     } else if (algorithm_name == "CSP") {
-        agents = CSP().resolve(map, scenarios);
+        util::InterruptHandler interrupt_handler;
+        agents = CSP(
+            [&interrupt_handler]() {
+                return interrupt_handler.wasInterrupted();
+            }
+        ).resolve(map, scenarios);
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;

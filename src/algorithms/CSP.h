@@ -14,6 +14,11 @@ class CSP : public Algorithm {
 private:
     friend class CSPTest;
 
+    std::function<bool()> interruption_requested = []() {
+        return false;
+    }; //TODO: add condition that this is present only in debug mode
+    bool group_solve_interrupted = false;
+
     std::vector<AgentPath> resolve_(
         const Map& map,
         const std::vector<Scenario>& scenarios
@@ -26,6 +31,7 @@ private:
 
 public:
     CSP() = default;
+    explicit CSP(std::function<bool()> interruption_requested);
 };
 
 #endif //MAPF_CSP_H
