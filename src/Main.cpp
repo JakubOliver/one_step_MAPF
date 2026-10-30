@@ -81,10 +81,20 @@ int main(int argc, char** argv) {
     Exporter::export_agents(agents, scenarios, output_file);
 
     if (program.get<bool>("--validate")) {
-        if (Validator::validate(map, scenarios, agents)) {
+        const auto [is_valid, validation_error] = Validator::validate(
+            map,
+            scenarios,
+            agents
+        );
+
+        if (is_valid) {
             std::cout << "Validation successful." << std::endl;
         } else {
-            std::cerr << "Validation failed." << std::endl;
+            std::cerr << "Validation failed";
+            if (validation_error.has_value()) {
+                std::cerr << ": " << *validation_error;
+            }
+            std::cerr << std::endl;
             return 1;
         }
     }

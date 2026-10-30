@@ -4,29 +4,50 @@
 
 #include <algorithm>
 #include <map>
-#include <set>
+#include <optional>
+#include <string>
 #include <utility>
 
-bool Validator::validate(
+namespace {
+
+std::string formatPosition(AgentCord position) {
+    return "(" + std::to_string(position.first) + ", "
+        + std::to_string(position.second) + ")";
+}
+
+}
+
+std::pair<bool, std::optional<std::string>> Validator::validate(
     const Map& map,
     const std::vector<Scenario>& scenarios,
     const std::vector<AgentPath>& paths
 ) {
-    return (
-        pathsMatchScenarios(scenarios, paths)
-        && pathsUseValidPositions(map, paths)
-        && pathsUseValidMoves(paths)
-        && pathsHaveNoVertexCollisions(paths)
-        && pathsHaveNoEdgeCollisions(paths)
-    );
+    if (auto error = pathsMatchScenarios(scenarios, paths)) {
+        return {false, std::move(error)};
+    }
+    if (auto error = pathsUseValidPositions(map, paths)) {
+        return {false, std::move(error)};
+    }
+    if (auto error = pathsUseValidMoves(paths)) {
+        return {false, std::move(error)};
+    }
+    if (auto error = pathsHaveNoVertexCollisions(paths)) {
+        return {false, std::move(error)};
+    }
+    if (auto error = pathsHaveNoEdgeCollisions(paths)) {
+        return {false, std::move(error)};
+    }
+
+    return {true, std::nullopt};
 }
 
-bool Validator::pathsMatchScenarios(
+std::optional<std::string> Validator::pathsMatchScenarios(
     const std::vector<Scenario>& scenarios,
     const std::vector<AgentPath>& paths
 ) {
     if (scenarios.size() != paths.size()) {
-        return false;
+        return "Expected " + std::to_string(scenarios.size())
+            + " paths, but received " + std::to_string(paths.size());
     }
 
     using PathEndpoints = std::pair<AgentCord, AgentCord>;
@@ -39,74 +60,107 @@ bool Validator::pathsMatchScenarios(
         }]++;
     }
 
-    for (const auto& agentPath : paths) {
-        const auto& path = agentPath.getPath();
+    for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
+        const auto& path = paths[pathIndex].getPath();
         if (path.empty()) {
-            return false;
+            return "Path " + std::to_string(pathIndex) + " is empty";
         }
 
         const PathEndpoints endpoints{path.front(), path.back()};
         const auto scenario = unmatchedScenarios.find(endpoints);
         if (scenario == unmatchedScenarios.end() || scenario->second == 0) {
-            return false;
+            return "Path " + std::to_string(pathIndex) + " from "
+                + formatPosition(path.front()) + " to "
+                + formatPosition(path.back())
+                + " does not match an unmatched scenario";
         }
         scenario->second--;
     }
 
-    return true;
+    return std::nullopt;
 }
 
-bool Validator::pathsUseValidPositions(
+std::optional<std::string> Validator::pathsUseValidPositions(
     const Map& map,
     const std::vector<AgentPath>& paths
 ) {
-    for (const auto& agentPath : paths) {
-        const auto& path = agentPath.getPath();
+    for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
+        const auto& path = paths[pathIndex].getPath();
 
-        for (const auto& position : path) {
-            if (!isValidPosition(map, position)) {
-                return false;
+        for (std::size_t time = 0; time < path.size(); ++time) {
+            const auto position = path[time];
+            std::string reason;
+
+            if (!map.isInBounds(position)) {
+                reason = "is outside the map";
+            } else {
+                const auto cell = map.map.find(position);
+                if (cell == map.map.end()) {
+                    reason = "is missing from the map";
+                } else if (cell->second) {
+                    reason = "is blocked";
+                }
+            }
+
+            if (!reason.empty()) {
+                return "Path " + std::to_string(pathIndex) + " position "
+                    + formatPosition(position) + " at time "
+                    + std::to_string(time) + " " + reason;
             }
         }
     }
 
-    return true;
+    return std::nullopt;
 }
 
-bool Validator::pathsUseValidMoves(const std::vector<AgentPath>& paths) {
-    for (const auto& agentPath : paths) {
-        const auto& path = agentPath.getPath();
+std::optional<std::string> Validator::pathsUseValidMoves(
+    const std::vector<AgentPath>& paths
+) {
+    for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
+        const auto& path = paths[pathIndex].getPath();
 
         for (std::size_t time = 1; time < path.size(); ++time) {
             if (!Agent::isValidMove(path[time - 1], path[time])) {
-                return false;
+                return "Path " + std::to_string(pathIndex)
+                    + " has an invalid move from "
+                    + formatPosition(path[time - 1]) + " to "
+                    + formatPosition(path[time]) + " at time "
+                    + std::to_string(time);
             }
         }
     }
 
-    return true;
+    return std::nullopt;
 }
 
-bool Validator::pathsHaveNoVertexCollisions(
+std::optional<std::string> Validator::pathsHaveNoVertexCollisions(
     const std::vector<AgentPath>& paths
 ) {
     const auto maximumPathLength = getMaximumPathLength(paths);
 
     for (std::size_t time = 0; time < maximumPathLength; ++time) {
-        std::set<AgentCord> occupiedPositions;
+        std::map<AgentCord, std::size_t> occupiedPositions;
 
-        for (const auto& path : paths) {
-            const auto position = path.getPathAtTime(time);
-            if (!occupiedPositions.insert(position).second) {
-                return false;
+        for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
+            const auto position = paths[pathIndex].getPathAtTime(time);
+            const auto [occupant, inserted] = occupiedPositions.emplace(
+                position,
+                pathIndex
+            );
+
+            if (!inserted) {
+                return "Paths " + std::to_string(occupant->second) + " and "
+                    + std::to_string(pathIndex) + " collide at "
+                    + formatPosition(position) + " at time "
+                    + std::to_string(time);
             }
         }
     }
 
-    return true;
+    return std::nullopt;
 }
 
-bool Validator::pathsHaveNoEdgeCollisions(
+std::optional<std::string> Validator::pathsHaveNoEdgeCollisions(
     const std::vector<AgentPath>& paths
 ) {
     const auto maximumPathLength = getMaximumPathLength(paths);
@@ -130,22 +184,17 @@ bool Validator::pathsHaveNoEdgeCollisions(
                     firstPrevious == secondCurrent
                     && secondPrevious == firstCurrent
                 ) {
-                    return false;
+                    return "Paths " + std::to_string(first) + " and "
+                        + std::to_string(second) + " swap positions "
+                        + formatPosition(firstPrevious) + " and "
+                        + formatPosition(firstCurrent) + " at time "
+                        + std::to_string(time);
                 }
             }
         }
     }
 
-    return true;
-}
-
-bool Validator::isValidPosition(const Map& map, AgentCord position) {
-    if (!map.isInBounds(position)) {
-        return false;
-    }
-
-    const auto cell = map.map.find(position);
-    return cell != map.map.end() && !cell->second;
+    return std::nullopt;
 }
 
 std::size_t Validator::getMaximumPathLength(

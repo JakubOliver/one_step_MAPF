@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <limits>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -59,6 +60,21 @@ AgentPath makePath(std::initializer_list<AgentCord> positions) {
     return AgentPath(std::vector<AgentCord>(positions));
 }
 
+void expectValid(
+    const std::pair<bool, std::optional<std::string>>& result
+) {
+    EXPECT_TRUE(result.first);
+    EXPECT_FALSE(result.second.has_value());
+}
+
+void expectInvalid(
+    const std::pair<bool, std::optional<std::string>>& result
+) {
+    EXPECT_FALSE(result.first);
+    ASSERT_TRUE(result.second.has_value());
+    EXPECT_FALSE(result.second->empty());
+}
+
 TEST(AgentTest, AcceptsWaitAndOrthogonalMoves) {
     EXPECT_TRUE(Agent::isValidMove({1, 1}, {1, 1}));
     EXPECT_TRUE(Agent::isValidMove({1, 1}, {2, 1}));
@@ -91,7 +107,7 @@ TEST(ValidatorTest, AcceptsValidPathsRegardlessOfScenarioOrder) {
         makePath({{0, 0}, {1, 0}, {2, 0}})
     };
 
-    EXPECT_TRUE(Validator::validate(map, scenarios, paths));
+    expectValid(Validator::validate(map, scenarios, paths));
 }
 
 TEST(ValidatorTest, RejectsMissingAndExtraPaths) {
@@ -100,8 +116,8 @@ TEST(ValidatorTest, RejectsMissingAndExtraPaths) {
         makeScenario({0, 0}, {1, 0})
     };
 
-    EXPECT_FALSE(Validator::validate(map, scenarios, {}));
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(map, scenarios, {}));
+    expectInvalid(Validator::validate(
         map,
         scenarios,
         {
@@ -117,8 +133,8 @@ TEST(ValidatorTest, RejectsEmptyAndMismatchedPaths) {
         makeScenario({0, 0}, {2, 0})
     };
 
-    EXPECT_FALSE(Validator::validate(map, scenarios, {AgentPath()}));
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(map, scenarios, {AgentPath()}));
+    expectInvalid(Validator::validate(
         map,
         scenarios,
         {makePath({{0, 0}, {1, 0}})}
@@ -130,7 +146,7 @@ TEST(ValidatorTest, MatchesDuplicateScenariosOneToOne) {
     const auto duplicate = makeScenario({0, 0}, {1, 0});
     const std::vector<Scenario> scenarios = {duplicate, duplicate};
 
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         map,
         scenarios,
         {
@@ -151,7 +167,7 @@ TEST(ValidatorTest, RejectsVertexCollision) {
         makePath({{1, 1}, {1, 0}})
     };
 
-    EXPECT_FALSE(Validator::validate(map, scenarios, paths));
+    expectInvalid(Validator::validate(map, scenarios, paths));
 }
 
 TEST(ValidatorTest, RejectsCollisionAfterShorterPathEnds) {
@@ -165,7 +181,7 @@ TEST(ValidatorTest, RejectsCollisionAfterShorterPathEnds) {
         makePath({{0, 1}, {0, 0}, {1, 0}, {2, 0}})
     };
 
-    EXPECT_FALSE(Validator::validate(map, scenarios, paths));
+    expectInvalid(Validator::validate(map, scenarios, paths));
 }
 
 TEST(ValidatorTest, RejectsEdgeSwap) {
@@ -179,7 +195,7 @@ TEST(ValidatorTest, RejectsEdgeSwap) {
         makePath({{1, 0}, {0, 0}})
     };
 
-    EXPECT_FALSE(Validator::validate(map, scenarios, paths));
+    expectInvalid(Validator::validate(map, scenarios, paths));
 }
 
 TEST(ValidatorTest, RejectsBlockedMissingAndOutOfBoundsPositions) {
@@ -187,7 +203,7 @@ TEST(ValidatorTest, RejectsBlockedMissingAndOutOfBoundsPositions) {
     const std::vector<Scenario> blockedScenario = {
         makeScenario({0, 0}, {2, 0})
     };
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         map,
         blockedScenario,
         {makePath({{0, 0}, {1, 0}, {2, 0}})}
@@ -202,7 +218,7 @@ TEST(ValidatorTest, RejectsBlockedMissingAndOutOfBoundsPositions) {
     const std::vector<Scenario> missingScenario = {
         makeScenario({0, 0}, {1, 0})
     };
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         incompleteMap,
         missingScenario,
         {makePath({{0, 0}, {1, 0}})}
@@ -211,7 +227,7 @@ TEST(ValidatorTest, RejectsBlockedMissingAndOutOfBoundsPositions) {
     const std::vector<Scenario> outsideScenario = {
         makeScenario({0, 0}, {3, 0})
     };
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         makeMap(3, 1),
         outsideScenario,
         {makePath({{0, 0}, {1, 0}, {2, 0}, {3, 0}})}
@@ -221,12 +237,12 @@ TEST(ValidatorTest, RejectsBlockedMissingAndOutOfBoundsPositions) {
 TEST(ValidatorTest, RejectsDiagonalMovesAndTeleportation) {
     const auto map = makeMap(3, 3);
 
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         map,
         {makeScenario({0, 0}, {1, 1})},
         {makePath({{0, 0}, {1, 1}})}
     ));
-    EXPECT_FALSE(Validator::validate(
+    expectInvalid(Validator::validate(
         map,
         {makeScenario({0, 0}, {2, 0})},
         {makePath({{0, 0}, {2, 0}})}
