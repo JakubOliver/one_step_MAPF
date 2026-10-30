@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     }
 
     auto output_file = program.get<std::string>("--output");
-    Exporter::export_agents(agents, output_file);
+    Exporter::export_agents(agents, scenarios, output_file);
 
 #if MAPF_WITH_VISUALIZER
     if (program.get<bool>("--visualize")) {

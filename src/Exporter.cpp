@@ -6,13 +6,25 @@
 
 #include <fstream>
 
-void Exporter::export_agents(const std::vector<AgentPath> &agents, const std::string& outputFile) {
+void Exporter::export_agents(
+    const std::vector<AgentPath>& agents,
+    const std::vector<Scenario>& scenarios,
+    const std::string& outputFile
+) {
     std::size_t maxPathSize = 0;
     for (const AgentPath& agent : agents) {
         maxPathSize = std::max(maxPathSize, agent.getLength());
     }
 
     std::ofstream file(outputFile);
+
+    file << "goals=";
+
+    for (const auto& scenario : scenarios) {
+        file << '(' << scenario.goalX << ',' << scenario.goalY << ')' << ',';
+    }
+
+    file << '\n';
 
     for (std::size_t i = 0; i < maxPathSize; i++) {
         file << i << ":";
@@ -23,6 +35,6 @@ void Exporter::export_agents(const std::vector<AgentPath> &agents, const std::st
             file << '(' << x << ',' << y << ')' << ',';
         }
 
-        file << std::endl;
+        file << '\n';
     }
 }
