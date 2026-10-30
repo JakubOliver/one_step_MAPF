@@ -265,3 +265,37 @@ TEST_F(CSPTest, AgentsMovesTowardsTheGoal3) {
 
     CSPTest::validateMovement(csp, map, agents, expectedPath);
 }
+
+TEST_F(CSPTest, ReturnsPartialPathsWhenInterruptedBetweenIterations) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
+    };
+    const std::vector<Scenario> scenarios = {
+        {
+            .startX = 0,
+            .startY = 0,
+            .goalX = 2,
+            .goalY = 0
+        }
+    };
+    std::size_t interruption_checks = 0;
+    CSP csp(
+        [&interruption_checks]() {
+            return interruption_checks++ > 0;
+        }
+    );
+
+    const auto paths = csp.resolve(map, scenarios);
+
+    ASSERT_EQ(paths.size(), 1);
+    ASSERT_EQ(paths[0].getLength(), 2);
+    EXPECT_EQ(paths[0].getPathAtTime(0), AgentCord(0, 0));
+    EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+}
