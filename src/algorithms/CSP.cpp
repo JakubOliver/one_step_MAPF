@@ -12,6 +12,7 @@
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -21,8 +22,36 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
+CSP::CSP()
+    : CSP(
+        defaultFitness,
+        []() {
+            return false;
+        }
+    ) {
+}
+
 CSP::CSP(std::function<bool()> interruption_requested)
-    : interruption_requested(std::move(interruption_requested)) {
+    : CSP(defaultFitness, std::move(interruption_requested)) {
+}
+
+CSP::CSP(
+    FitnessFunction fitness,
+    std::function<bool()> interruption_requested
+)
+    : interruption_requested(std::move(interruption_requested)),
+      fitness(std::move(fitness)) {
+    if (!this->fitness) {
+        throw std::invalid_argument(
+            "CSP fitness function must be provided"
+        );
+    }
+
+    if (!this->interruption_requested) {
+        throw std::invalid_argument(
+            "CSP interruption callback must be provided"
+        );
+    }
 }
 
 int64_t from_pos_to_index(
@@ -38,7 +67,7 @@ std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
     const Map& map
 ) {
-    return processGroup(agents, map, defaultFitness);
+    return processGroup(agents, map, fitness);
 }
 
 int64_t CSP::defaultFitness(
@@ -56,6 +85,22 @@ int64_t CSP::defaultFitness(
     );
 
     return 2 * (dx + dy);
+}
+
+CSP::FitnessFunction CSP::getFitness(const std::string& name) {
+    static const std::vector<std::pair<std::string, FitnessFunction>> fitnesses = {
+        {"manhattan", defaultFitness}
+    };
+
+    for (const auto& [fitness_name, fitness_function] : fitnesses) {
+        if (fitness_name == name) {
+            return fitness_function;
+        }
+    }
+
+    throw std::invalid_argument(
+        "Unknown CSP fitness: " + name + ". Available fitnesses: manhattan"
+    );
 }
 
 std::vector<Agent> CSP::processGroup(

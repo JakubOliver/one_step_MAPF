@@ -5,8 +5,9 @@
 #ifndef MAPF_CSP_H
 #define MAPF_CSP_H
 
-#include <functional>
 #include <cstdint>
+#include <functional>
+#include <string>
 
 #include "../Agent.h"
 #include "Algorithm.h"
@@ -17,16 +18,33 @@ class CSP : public Algorithm {
 private:
     friend class CSPTest;
 
+    static int64_t defaultFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent
+    );
+
+public:
     using FitnessFunction = std::function<int64_t(
         const Map&,
         const std::vector<Agent>&,
         const Agent&
     )>;
 
-    std::function<bool()> interruption_requested = []() {
-        return false;
-    }; //TODO: add condition that this is present only in debug mode
+    static FitnessFunction getFitness(const std::string& name);
+
+    CSP();
+    explicit CSP(std::function<bool()> interruption_requested);
+    explicit CSP(
+        FitnessFunction fitness,
+        std::function<bool()> interruption_requested
+    );
+
+private:
+
+    std::function<bool()> interruption_requested;
     bool group_solve_interrupted = false;
+    FitnessFunction fitness;
 
     std::vector<AgentPath> resolve_(
         const Map& map,
@@ -44,15 +62,6 @@ private:
         const FitnessFunction& fitness
     );
 
-    static int64_t defaultFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent
-    );
-
-public:
-    CSP() = default;
-    explicit CSP(std::function<bool()> interruption_requested);
 };
 
 #endif //MAPF_CSP_H
