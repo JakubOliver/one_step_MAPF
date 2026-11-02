@@ -32,6 +32,11 @@ RandomFitness::RandomFitness(std::uint32_t seed)
       distribution(1.0, 1.0) {
 }
 
+/*
+Randomize fitness works better (in completion) rather than determistic version, 
+but there is problem how to have all agent stopping at the same time. Probably
+some condition apply change only if agent is in surrouding would make sense. 
+*/
 int64_t RandomFitness::operator()(
     const Map&,
     const std::vector<Agent>&,
@@ -212,7 +217,7 @@ std::vector<Agent> CSP::processGroup(
             costs.push_back(fitness(map, agents, candidate, is_staying));
         };
 
-        add_candidate(agent.position, true);
+        add_candidate(agent.position, agent.position == agent.goal);
 
         for (const auto& pos : agent.getMoveTo()) {
             add_candidate(pos);
