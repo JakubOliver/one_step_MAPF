@@ -25,6 +25,13 @@ private:
         bool is_staying
     );
 
+    static int64_t sqrtDistanceFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent,
+        bool is_staying
+    );
+
 public:
     using FitnessFunction = std::function<int64_t(
         const Map&,

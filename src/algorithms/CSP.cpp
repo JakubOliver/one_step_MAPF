@@ -6,6 +6,7 @@
 
 #include "Grouping.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -88,9 +89,38 @@ int64_t CSP::manhattanDistanceFitness(
     return 2 * (dx + dy) + (is_staying ? 1 : 0);
 }
 
+int64_t CSP::sqrtDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    constexpr double offset = 4.0;
+    constexpr int64_t scale = 1000;
+
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    const auto cost = std::llround(
+        scale * (
+            std::sqrt(static_cast<double>(dx + dy) + offset) -
+            std::sqrt(offset)
+        )
+    );
+
+    return cost + (is_staying ? 1 : 0);
+}
+
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
     static const std::vector<std::pair<std::string, FitnessFunction>> fitnesses = {
-        {"manhattan", manhattanDistanceFitness}
+        {"manhattan", manhattanDistanceFitness},
+        {"sqrt", sqrtDistanceFitness}
     };
 
     for (const auto& [fitness_name, fitness_function] : fitnesses) {
@@ -100,7 +130,7 @@ CSP::FitnessFunction CSP::getFitness(const std::string& name) {
     }
 
     throw std::invalid_argument(
-        "Unknown CSP fitness: " + name + ". Available fitnesses: manhattan"
+        "Unknown CSP fitness: " + name + ". Available fitnesses: manhattan, sqrt"
     );
 }
 
