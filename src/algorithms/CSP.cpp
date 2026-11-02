@@ -114,7 +114,7 @@ int64_t CSP::sqrtDistanceFitness(
         )
     );
 
-    return cost + (is_staying ? 1 : 0);
+    return cost + (is_staying ? 200 : 0);
 }
 
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
@@ -161,25 +161,11 @@ std::vector<Agent> CSP::processGroup(
                 from_pos_to_index(pos, map.width)
             );
 
-            //costs.push_back(dx + dy);
-            //costs.push_back(round(10 * sqrt(dx + dy + 10)));
             Agent candidate = agent;
             candidate.position = pos;
             costs.push_back(fitness(map, agents, candidate, is_staying));
-
-            // constexpr double offset = 4.0;
-            // constexpr int64_t scale = 1000;
-
-            // const auto cost = std::llround(
-            //     scale * (
-            //         std::sqrt(static_cast<double>(dx + dy) + offset)
-            //         - std::sqrt(offset)
-            //     )
-            // );
-            // costs.push_back(cost + penalty);
         };
 
-        //add_candidate(agent.position, 235);
         add_candidate(agent.position, true);
 
         for (const auto& pos : agent.getMoveTo()) {
