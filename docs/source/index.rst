@@ -1,5 +1,5 @@
 one_step_MAPF documentation
-==========================
+===========================
 
 This documentation combines two complementary sources:
 
