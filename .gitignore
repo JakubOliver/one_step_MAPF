@@ -1,6 +1,7 @@
 #C++
 build
 /out/
+/docs/build/
 
 #Clion
 .junie
