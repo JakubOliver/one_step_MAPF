@@ -11,12 +11,6 @@ on:
       - "CMakePresets.json"
       - ".github/workflows/tests.yml"
   pull_request:
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - ".github/workflows/tests.yml"
   workflow_dispatch:
 
 permissions:
