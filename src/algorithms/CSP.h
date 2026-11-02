@@ -7,12 +7,30 @@
 
 #include <cstdint>
 #include <functional>
+#include <random>
 #include <string>
 
 #include "../Agent.h"
 #include "Algorithm.h"
 
 class CSPTest;
+
+class RandomFitness {
+private:
+    std::mt19937 generator;
+    std::normal_distribution<double> distribution;
+
+public:
+    RandomFitness();
+    explicit RandomFitness(std::uint32_t seed);
+
+    int64_t operator()(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent,
+        bool is_staying
+    );
+};
 
 class CSP : public Algorithm {
 private:

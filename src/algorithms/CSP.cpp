@@ -23,6 +23,42 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
+RandomFitness::RandomFitness()
+    : RandomFitness(std::random_device{}()) {
+}
+
+RandomFitness::RandomFitness(std::uint32_t seed)
+    : generator(seed),
+      distribution(1.0, 1.0) {
+}
+
+int64_t RandomFitness::operator()(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    if (is_staying){
+        return 0;
+    }
+
+    return dx + dy +
+           std::llround(distribution(generator));
+
+    // return dx + dy +
+    //        std::llround(distribution(generator)) +
+    //        (is_staying ? 1 : 0);
+}
+
 CSP::CSP()
     : CSP(
         manhattanDistanceFitness,
@@ -118,19 +154,29 @@ int64_t CSP::sqrtDistanceFitness(
 }
 
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
-    static const std::vector<std::pair<std::string, FitnessFunction>> fitnesses = {
-        {"manhattan", manhattanDistanceFitness},
-        {"sqrt", sqrtDistanceFitness}
+    using FitnessFactory = std::function<FitnessFunction()>;
+
+    static const std::vector<std::pair<std::string, FitnessFactory>> fitnesses = {
+        {"manhattan", [] {
+            return manhattanDistanceFitness;
+        }},
+        {"sqrt", [] {
+            return sqrtDistanceFitness;
+        }},
+        {"random", [] {
+            return FitnessFunction(RandomFitness());
+        }}
     };
 
-    for (const auto& [fitness_name, fitness_function] : fitnesses) {
+    for (const auto& [fitness_name, fitness_factory] : fitnesses) {
         if (fitness_name == name) {
-            return fitness_function;
+            return fitness_factory();
         }
     }
 
     throw std::invalid_argument(
-        "Unknown CSP fitness: " + name + ". Available fitnesses: manhattan, sqrt"
+        "Unknown CSP fitness: " + name +
+        ". Available fitnesses: manhattan, sqrt, random"
     );
 }
 
