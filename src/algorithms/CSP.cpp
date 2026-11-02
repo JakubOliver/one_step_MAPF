@@ -38,6 +38,31 @@ std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
     const Map& map
 ) {
+    return processGroup(agents, map, defaultFitness);
+}
+
+int64_t CSP::defaultFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent
+) {
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    return 2 * (dx + dy);
+}
+
+std::vector<Agent> CSP::processGroup(
+    const std::vector<Agent>& agents,
+    const Map& map,
+    const FitnessFunction& fitness
+) {
     group_solve_interrupted = false;
 
     CpModelBuilder cp_model;
@@ -60,22 +85,28 @@ std::vector<Agent> CSP::processGroup(
                 from_pos_to_index(pos, map.width)
             );
 
-            const int64_t dx =
-                std::llabs(
-                    static_cast<int64_t>(pos.first) -
-                    static_cast<int64_t>(agent.goal.first)
-                );
-
-            const int64_t dy =
-                std::llabs(
-                    static_cast<int64_t>(pos.second) -
-                    static_cast<int64_t>(agent.goal.second)
-                );
-
             //costs.push_back(dx + dy);
-            costs.push_back(2 *(dx + dy) + penalty); //the smallest penalty can be 1, so we multiply the distance by 2, so it staying is not same as moving from the goal.
+            //costs.push_back(round(10 * sqrt(dx + dy + 10)));
+            Agent candidate = agent;
+            candidate.position = pos;
+            costs.push_back(
+                fitness(map, agents, candidate) +
+                static_cast<int64_t>(penalty)
+            );
+
+            // constexpr double offset = 4.0;
+            // constexpr int64_t scale = 1000;
+
+            // const auto cost = std::llround(
+            //     scale * (
+            //         std::sqrt(static_cast<double>(dx + dy) + offset)
+            //         - std::sqrt(offset)
+            //     )
+            // );
+            // costs.push_back(cost + penalty);
         };
 
+        //add_candidate(agent.position, 235);
         add_candidate(agent.position, 1); // Staying in the same place is penalized to encourage movements towards the goal.
 
         for (const auto& pos : agent.getMoveTo()) {
@@ -211,7 +242,7 @@ std::vector<AgentPath>CSP::resolve_(
     }
 
     Grouping grouping;
-    std::set<std::vector<AgentCord>> visited_configurations;
+    std::set<std::vector<AgentCord>> visited_configurations; //TODO: implement memory, but glboal memory does not make sense (probably) it is too costly, so maybe just some fix size local memory 
 
     auto get_configuration = [&]() {
         std::vector<AgentCord> configuration(scenarios.size());
@@ -223,7 +254,7 @@ std::vector<AgentPath>CSP::resolve_(
         return configuration;
     };
 
-    visited_configurations.insert(get_configuration());
+    //visited_configurations.insert(get_configuration());
     std::size_t iteration = 0;
 
     while (

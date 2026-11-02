@@ -6,6 +6,7 @@
 #define MAPF_CSP_H
 
 #include <functional>
+#include <cstdint>
 
 #include "../Agent.h"
 #include "Algorithm.h"
@@ -15,6 +16,12 @@ class CSPTest;
 class CSP : public Algorithm {
 private:
     friend class CSPTest;
+
+    using FitnessFunction = std::function<int64_t(
+        const Map&,
+        const std::vector<Agent>&,
+        const Agent&
+    )>;
 
     std::function<bool()> interruption_requested = []() {
         return false;
@@ -29,6 +36,18 @@ private:
     std::vector<Agent> processGroup(
         const std::vector<Agent>& agents,
         const Map& map
+    );
+
+    std::vector<Agent> processGroup(
+        const std::vector<Agent>& agents,
+        const Map& map,
+        const FitnessFunction& fitness
+    );
+
+    static int64_t defaultFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent
     );
 
 public:
