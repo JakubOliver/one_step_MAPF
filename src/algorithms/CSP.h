@@ -18,7 +18,7 @@ class CSP : public Algorithm {
 private:
     friend class CSPTest;
 
-    static int64_t defaultFitness(
+    static int64_t manhattanDistanceFitness(
         const Map& map,
         const std::vector<Agent>& agents,
         const Agent& agent

@@ -24,7 +24,7 @@ using namespace operations_research::sat;
 
 CSP::CSP()
     : CSP(
-        defaultFitness,
+        manhattanDistanceFitness,
         []() {
             return false;
         }
@@ -32,7 +32,7 @@ CSP::CSP()
 }
 
 CSP::CSP(std::function<bool()> interruption_requested)
-    : CSP(defaultFitness, std::move(interruption_requested)) {
+    : CSP(manhattanDistanceFitness, std::move(interruption_requested)) {
 }
 
 CSP::CSP(
@@ -70,7 +70,7 @@ std::vector<Agent> CSP::processGroup(
     return processGroup(agents, map, fitness);
 }
 
-int64_t CSP::defaultFitness(
+int64_t CSP::manhattanDistanceFitness(
     const Map&,
     const std::vector<Agent>&,
     const Agent& agent
@@ -89,7 +89,7 @@ int64_t CSP::defaultFitness(
 
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
     static const std::vector<std::pair<std::string, FitnessFunction>> fitnesses = {
-        {"manhattan", defaultFitness}
+        {"manhattan", manhattanDistanceFitness}
     };
 
     for (const auto& [fitness_name, fitness_function] : fitnesses) {
