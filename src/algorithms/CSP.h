@@ -21,14 +21,16 @@ private:
     static int64_t manhattanDistanceFitness(
         const Map& map,
         const std::vector<Agent>& agents,
-        const Agent& agent
+        const Agent& agent,
+        bool is_staying
     );
 
 public:
     using FitnessFunction = std::function<int64_t(
         const Map&,
         const std::vector<Agent>&,
-        const Agent&
+        const Agent&,
+        bool
     )>;
 
     static FitnessFunction getFitness(const std::string& name);

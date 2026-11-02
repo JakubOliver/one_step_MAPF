@@ -73,7 +73,8 @@ std::vector<Agent> CSP::processGroup(
 int64_t CSP::manhattanDistanceFitness(
     const Map&,
     const std::vector<Agent>&,
-    const Agent& agent
+    const Agent& agent,
+    bool is_staying
 ) {
     const int64_t dx = std::llabs(
         static_cast<int64_t>(agent.position.first) -
@@ -84,7 +85,7 @@ int64_t CSP::manhattanDistanceFitness(
         static_cast<int64_t>(agent.goal.second)
     );
 
-    return 2 * (dx + dy);
+    return 2 * (dx + dy) + (is_staying ? 1 : 0);
 }
 
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
@@ -121,7 +122,7 @@ std::vector<Agent> CSP::processGroup(
         std::vector<int64_t> Q_pos;
         std::vector<int64_t> costs;
 
-        auto add_candidate = [&](const auto& pos, std::size_t penalty = 0) {
+        auto add_candidate = [&](const auto& pos, bool is_staying = false) {
             if (!map.isInBounds(pos) || map.isBlocked(pos)) {
                 return;
             }
@@ -134,10 +135,7 @@ std::vector<Agent> CSP::processGroup(
             //costs.push_back(round(10 * sqrt(dx + dy + 10)));
             Agent candidate = agent;
             candidate.position = pos;
-            costs.push_back(
-                fitness(map, agents, candidate) +
-                static_cast<int64_t>(penalty)
-            );
+            costs.push_back(fitness(map, agents, candidate, is_staying));
 
             // constexpr double offset = 4.0;
             // constexpr int64_t scale = 1000;
@@ -152,7 +150,7 @@ std::vector<Agent> CSP::processGroup(
         };
 
         //add_candidate(agent.position, 235);
-        add_candidate(agent.position, 1); // Staying in the same place is penalized to encourage movements towards the goal.
+        add_candidate(agent.position, true);
 
         for (const auto& pos : agent.getMoveTo()) {
             add_candidate(pos);
