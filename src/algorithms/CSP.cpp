@@ -6,12 +6,14 @@
 
 #include "Grouping.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -21,8 +23,77 @@
 using namespace operations_research;
 using namespace operations_research::sat;
 
+RandomFitness::RandomFitness()
+    : RandomFitness(std::random_device{}()) {
+}
+
+RandomFitness::RandomFitness(std::uint32_t seed)
+    : generator(seed),
+      distribution(1.0, 1.0) {
+}
+
+/*
+Randomize fitness works better (in completion) rather than determistic version, 
+but there is problem how to have all agent stopping at the same time. Probably
+some condition apply change only if agent is in surrouding would make sense. 
+*/
+int64_t RandomFitness::operator()(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    if (is_staying){
+        return 0;
+    }
+
+    return dx + dy +
+           std::llround(distribution(generator));
+
+    // return dx + dy +
+    //        std::llround(distribution(generator)) +
+    //        (is_staying ? 1 : 0);
+}
+
+CSP::CSP()
+    : CSP(
+        manhattanDistanceFitness,
+        []() {
+            return false;
+        }
+    ) {
+}
+
 CSP::CSP(std::function<bool()> interruption_requested)
-    : interruption_requested(std::move(interruption_requested)) {
+    : CSP(manhattanDistanceFitness, std::move(interruption_requested)) {
+}
+
+CSP::CSP(
+    FitnessFunction fitness,
+    std::function<bool()> interruption_requested
+)
+    : interruption_requested(std::move(interruption_requested)),
+      fitness(std::move(fitness)) {
+    if (!this->fitness) {
+        throw std::invalid_argument(
+            "CSP fitness function must be provided"
+        );
+    }
+
+    if (!this->interruption_requested) {
+        throw std::invalid_argument(
+            "CSP interruption callback must be provided"
+        );
+    }
 }
 
 int64_t from_pos_to_index(
@@ -38,6 +109,87 @@ std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
     const Map& map
 ) {
+    return processGroup(agents, map, fitness);
+}
+
+int64_t CSP::manhattanDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    return 2 * (dx + dy) + (is_staying ? 1 : 0);
+}
+
+int64_t CSP::sqrtDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    constexpr double offset = 4.0;
+    constexpr int64_t scale = 1000;
+
+    const int64_t dx = std::llabs(
+        static_cast<int64_t>(agent.position.first) -
+        static_cast<int64_t>(agent.goal.first)
+    );
+    const int64_t dy = std::llabs(
+        static_cast<int64_t>(agent.position.second) -
+        static_cast<int64_t>(agent.goal.second)
+    );
+
+    const auto cost = std::llround(
+        scale * (
+            std::sqrt(static_cast<double>(dx + dy) + offset) -
+            std::sqrt(offset)
+        )
+    );
+
+    return cost + (is_staying ? 200 : 0);
+}
+
+CSP::FitnessFunction CSP::getFitness(const std::string& name) {
+    using FitnessFactory = std::function<FitnessFunction()>;
+
+    static const std::vector<std::pair<std::string, FitnessFactory>> fitnesses = {
+        {"manhattan", [] {
+            return manhattanDistanceFitness;
+        }},
+        {"sqrt", [] {
+            return sqrtDistanceFitness;
+        }},
+        {"random", [] {
+            return FitnessFunction(RandomFitness());
+        }}
+    };
+
+    for (const auto& [fitness_name, fitness_factory] : fitnesses) {
+        if (fitness_name == name) {
+            return fitness_factory();
+        }
+    }
+
+    throw std::invalid_argument(
+        "Unknown CSP fitness: " + name +
+        ". Available fitnesses: manhattan, sqrt, random"
+    );
+}
+
+std::vector<Agent> CSP::processGroup(
+    const std::vector<Agent>& agents,
+    const Map& map,
+    const FitnessFunction& fitness
+) {
     group_solve_interrupted = false;
 
     CpModelBuilder cp_model;
@@ -51,7 +203,7 @@ std::vector<Agent> CSP::processGroup(
         std::vector<int64_t> Q_pos;
         std::vector<int64_t> costs;
 
-        auto add_candidate = [&](const auto& pos, std::size_t penalty = 0) {
+        auto add_candidate = [&](const auto& pos, bool is_staying = false) {
             if (!map.isInBounds(pos) || map.isBlocked(pos)) {
                 return;
             }
@@ -60,23 +212,14 @@ std::vector<Agent> CSP::processGroup(
                 from_pos_to_index(pos, map.width)
             );
 
-            const int64_t dx =
-                std::llabs(
-                    static_cast<int64_t>(pos.first) -
-                    static_cast<int64_t>(agent.goal.first)
-                );
-
-            const int64_t dy =
-                std::llabs(
-                    static_cast<int64_t>(pos.second) -
-                    static_cast<int64_t>(agent.goal.second)
-                );
-
-            //costs.push_back(dx + dy);
-            costs.push_back(2 *(dx + dy) + penalty); //the smallest penalty can be 1, so we multiply the distance by 2, so it staying is not same as moving from the goal.
+            Agent candidate = agent;
+            candidate.position = pos;
+            costs.push_back(fitness(map, agents, candidate, is_staying));
         };
 
-        add_candidate(agent.position, 1); // Staying in the same place is penalized to encourage movements towards the goal.
+        add_candidate(agent.position, true); 
+        //TODO: test whether only agent.position==agent.goal does not make more sense
+        // because that whould make penalizating staying only at final position
 
         for (const auto& pos : agent.getMoveTo()) {
             add_candidate(pos);
@@ -211,7 +354,7 @@ std::vector<AgentPath>CSP::resolve_(
     }
 
     Grouping grouping;
-    std::set<std::vector<AgentCord>> visited_configurations;
+    std::set<std::vector<AgentCord>> visited_configurations; //TODO: implement memory, but glboal memory does not make sense (probably) it is too costly, so maybe just some fix size local memory 
 
     auto get_configuration = [&]() {
         std::vector<AgentCord> configuration(scenarios.size());
@@ -223,7 +366,7 @@ std::vector<AgentPath>CSP::resolve_(
         return configuration;
     };
 
-    visited_configurations.insert(get_configuration());
+    //visited_configurations.insert(get_configuration());
     std::size_t iteration = 0;
 
     while (

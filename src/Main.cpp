@@ -28,6 +28,9 @@ int main(int argc, char** argv) {
         .help("path to the scenario file");
     program.add_argument("--algorithm")
         .default_value("PriorityPlanning");
+    program.add_argument("--fitness")
+        .default_value("manhattan")
+        .help("CSP fitness function");
     program.add_argument("--visualize")
         .default_value(false)
         .implicit_value(true);
@@ -67,11 +70,17 @@ int main(int argc, char** argv) {
         agents = PriorityPlanning().resolve(map, scenarios);
     } else if (algorithm_name == "CSP") {
         util::InterruptHandler interrupt_handler;
-        agents = CSP(
-            [&interrupt_handler]() {
-                return interrupt_handler.wasInterrupted();
-            }
-        ).resolve(map, scenarios);
+        try {
+            agents = CSP(
+                CSP::getFitness(program.get<std::string>("--fitness")),
+                [&interrupt_handler]() {
+                    return interrupt_handler.wasInterrupted();
+                }
+            ).resolve(map, scenarios);
+        } catch (const std::exception& err) {
+            std::cerr << err.what() << std::endl;
+            return 1;
+        }
     } else {
         std::cerr << "Unknown algorithm: " << algorithm_name << std::endl;
         return 1;
