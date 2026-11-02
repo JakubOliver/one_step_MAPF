@@ -217,7 +217,9 @@ std::vector<Agent> CSP::processGroup(
             costs.push_back(fitness(map, agents, candidate, is_staying));
         };
 
-        add_candidate(agent.position, agent.position == agent.goal);
+        add_candidate(agent.position, true); 
+        //TODO: test whether only agent.position==agent.goal does not make more sense
+        // because that whould make penalizating staying only at final position
 
         for (const auto& pos : agent.getMoveTo()) {
             add_candidate(pos);
