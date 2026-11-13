@@ -41,6 +41,9 @@ Algorithms
 .. doxygenfile:: algorithms/CSP.h
    :project: one_step_MAPF
 
+.. doxygenfile:: algorithms/Fitness.h
+   :project: one_step_MAPF
+
 .. doxygenfile:: algorithms/Grouping.h
    :project: one_step_MAPF
 

@@ -49,3 +49,18 @@ XDG_SESSION_TYPE=x11 ./out/build/release/MAPF data/warehouse-10-20-10-2-1.map da
 ```
 
 for more info checkout the repository of the visualizer
+
+## CSP fitness and agent memory
+
+Choose `--fitness` from `manhattan` (default), `sqrt`, `squared`, `piecewise`,
+`log`, or `random`. Enable a penalty for returning to recently departed positions
+with `--memory-size N` (default 0, disabled) and `--memory-penalty P` (default 1).
+The penalty's effect depends on the fitness scale.
+
+```sh
+./out/build/release/MAPF map.map scenario.scen --algorithm CSP --fitness manhattan --memory-size 5 --memory-penalty 3
+```
+
+Optionally, `--prevent-immediate-return` forbids a return in the next step;
+waiting is allowed, as is returning after a wait. See the
+[approaches documentation](docs/source/approaches.rst) for details.
