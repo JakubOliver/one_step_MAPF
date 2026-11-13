@@ -3,14 +3,16 @@
 //
 
 #include "Grouping.h"
+#include "../MemoryAgent.h"
 
 #include <queue>
 #include <set>
 
-std::vector<std::vector<Agent> > Grouping::getGroups(
-    const std::map<AgentCord, Agent>& agents
+template<typename AgentType>
+std::vector<std::vector<AgentType>> Grouping::getGroups(
+    const std::map<AgentCord, AgentType>& agents
 ) {
-    std::vector<std::vector<Agent>> groups;
+    std::vector<std::vector<AgentType>> groups;
     std::set<AgentCord> visited;
 
     for (const auto& agent_entry : agents) {
@@ -46,3 +48,10 @@ std::vector<std::vector<Agent> > Grouping::getGroups(
 
     return groups;
 }
+
+template std::vector<std::vector<Agent>> Grouping::getGroups(
+    const std::map<AgentCord, Agent>& agents
+);
+template std::vector<std::vector<MemoryAgent>> Grouping::getGroups(
+    const std::map<AgentCord, MemoryAgent>& agents
+);

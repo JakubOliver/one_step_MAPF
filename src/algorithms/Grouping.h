@@ -14,8 +14,9 @@ class Grouping {
 public:
     //TODO: prepsat na iterator
     //TODO: maybe static
-    std::vector<std::vector<Agent>> getGroups(
-        const std::map<AgentCord, Agent>& agents
+    template<typename AgentType>
+    std::vector<std::vector<AgentType>> getGroups(
+        const std::map<AgentCord, AgentType>& agents
     );
 };
 

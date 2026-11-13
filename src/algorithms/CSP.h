@@ -7,58 +7,31 @@
 
 #include <cstdint>
 #include <functional>
-#include <random>
 #include <string>
 
+#include "Fitness.h"
 #include "../Agent.h"
+#include "../MemoryAgent.h"
 #include "Algorithm.h"
 
 class CSPTest;
-
-class RandomFitness {
-private:
-    std::mt19937 generator;
-    std::normal_distribution<double> distribution;
-
-public:
-    RandomFitness();
-    explicit RandomFitness(std::uint32_t seed);
-
-    int64_t operator()(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-};
 
 class CSP : public Algorithm {
 private:
     friend class CSPTest;
 
-    static int64_t manhattanDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
-    static int64_t sqrtDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
 public:
-    using FitnessFunction = std::function<int64_t(
-        const Map&,
-        const std::vector<Agent>&,
-        const Agent&,
-        bool
-    )>;
+    using FitnessFunction = Fitness::FitnessFunction;
 
-    static FitnessFunction getFitness(const std::string& name);
+    static FitnessFunction getFitness(const std::string& name) {
+        return Fitness::getFitness(name);
+    }
+
+    struct MemoryOptions {
+        std::size_t capacity;
+        int64_t penalty;
+        bool prevent_immediate_return = false;
+    };
 
     CSP();
     explicit CSP(std::function<bool()> interruption_requested);
@@ -66,12 +39,18 @@ public:
         FitnessFunction fitness,
         std::function<bool()> interruption_requested
     );
+    CSP(
+        FitnessFunction fitness,
+        std::function<bool()> interruption_requested,
+        MemoryOptions memory
+    );
 
 private:
 
     std::function<bool()> interruption_requested;
     bool group_solve_interrupted = false;
     FitnessFunction fitness;
+    MemoryOptions memory{0, 0};
 
     std::vector<AgentPath> resolve_(
         const Map& map,
@@ -83,10 +62,16 @@ private:
         const Map& map
     );
 
-    std::vector<Agent> processGroup(
-        const std::vector<Agent>& agents,
+    template<typename AgentType, bool PreventImmediateReturn = false>
+    std::vector<AgentType> processGroupTyped(
+        const std::vector<AgentType>& agents,
+        const Map& map
+    );
+
+    template<typename AgentType, bool PreventImmediateReturn = false>
+    std::vector<AgentPath> resolveTyped(
         const Map& map,
-        const FitnessFunction& fitness
+        const std::vector<Scenario>& scenarios
     );
 
 };
