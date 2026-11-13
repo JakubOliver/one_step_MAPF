@@ -3,6 +3,7 @@
 
 #include "../Agent.h"
 #include "../Map.h"
+#include "../Scenario.h"
 
 #include <cstdint>
 #include <functional>
@@ -18,6 +19,8 @@ private:
 public:
     RandomFitness();
     explicit RandomFitness(std::uint32_t seed);
+
+    int64_t evaluate(uint64_t distance, bool is_staying);
 
     int64_t operator()(
         const Map& map,
@@ -35,8 +38,11 @@ using FitnessFunction = std::function<int64_t(
     const Agent&,
     bool
 )>;
+using DistanceFunction = std::function<uint64_t(const Agent&)>;
 
 FitnessFunction getFitness(const std::string& name);
+FitnessFunction getFitness(const std::string& name, DistanceFunction distance);
+DistanceFunction shortestPathDistance(const Map& map, const std::vector<Scenario>& scenarios);
 
 } // namespace Fitness
 

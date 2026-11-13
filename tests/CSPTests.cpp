@@ -620,6 +620,7 @@ TEST(ArgumentsTest, PreservesDefaultsAndExplicitOptions) {
     ASSERT_TRUE(defaults.has_value());
     EXPECT_EQ(defaults->algorithm, "PriorityPlanning");
     EXPECT_EQ(defaults->fitness, "manhattan");
+    EXPECT_EQ(defaults->distance, "manhattan");
     EXPECT_EQ(defaults->memory_size, 0);
     EXPECT_EQ(defaults->memory_penalty, 1);
     EXPECT_FALSE(defaults->prevent_immediate_return);
@@ -627,7 +628,7 @@ TEST(ArgumentsTest, PreservesDefaultsAndExplicitOptions) {
 
     const auto options = parseTestArguments({
         "MAPF", "map", "scenario", "--algorithm", "CSP", "--fitness", "log",
-        "--memory-size", "5", "--memory-penalty", "3",
+        "--distance", "shortest-path", "--memory-size", "5", "--memory-penalty", "3",
         "--prevent-immediate-return", "--output", "paths.csv", "--validate"
     });
     ASSERT_TRUE(options.has_value());
@@ -635,6 +636,7 @@ TEST(ArgumentsTest, PreservesDefaultsAndExplicitOptions) {
     EXPECT_EQ(options->scenario_file, "scenario");
     EXPECT_EQ(options->algorithm, "CSP");
     EXPECT_EQ(options->fitness, "log");
+    EXPECT_EQ(options->distance, "shortest-path");
     EXPECT_EQ(options->memory_size, 5);
     EXPECT_EQ(options->memory_penalty, 3);
     EXPECT_TRUE(options->prevent_immediate_return);
@@ -674,6 +676,12 @@ TEST(AlgorithmRunnerTest, RunsCspWithOptionsAndRejectsInvalidConfiguration) {
     const auto paths = util::runAlgorithm(*arguments, map, scenarios);
     ASSERT_EQ(paths.size(), 1);
     EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+
+    arguments->distance = "shortest-path";
+    arguments->fitness = "squared";
+    EXPECT_EQ(util::runAlgorithm(*arguments, map, scenarios)[0].getPathAtTime(1), AgentCord(1, 0));
+    arguments->distance = "unknown";
+    EXPECT_THROW(util::runAlgorithm(*arguments, map, scenarios), std::invalid_argument);
 
     arguments->memory_size = -1;
     EXPECT_THROW(util::runAlgorithm(*arguments, map, scenarios), std::invalid_argument);
