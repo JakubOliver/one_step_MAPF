@@ -30,6 +30,7 @@ public:
     struct MemoryOptions {
         std::size_t capacity;
         int64_t penalty;
+        bool prevent_immediate_return = false;
     };
 
     CSP();
@@ -61,13 +62,13 @@ private:
         const Map& map
     );
 
-    template<typename AgentType>
+    template<typename AgentType, bool PreventImmediateReturn = false>
     std::vector<AgentType> processGroupTyped(
         const std::vector<AgentType>& agents,
         const Map& map
     );
 
-    template<typename AgentType>
+    template<typename AgentType, bool PreventImmediateReturn = false>
     std::vector<AgentPath> resolveTyped(
         const Map& map,
         const std::vector<Scenario>& scenarios

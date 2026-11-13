@@ -59,8 +59,9 @@ CSP::CSP(
     std::function<bool()> interruption_requested,
     MemoryOptions memory
 ) : CSP(std::move(fitness), std::move(interruption_requested)) {
-    if (memory.capacity == 0 || memory.penalty <= 0) {
-        throw std::invalid_argument("CSP memory capacity and penalty must be positive");
+    if ((memory.capacity == 0 && (!memory.prevent_immediate_return || memory.penalty != 0)) ||
+        (memory.capacity > 0 && memory.penalty <= 0)) {
+        throw std::invalid_argument("Invalid CSP memory configuration");
     }
     this->memory = memory;
 }
@@ -81,7 +82,7 @@ std::vector<Agent> CSP::processGroup(
     return processGroupTyped(agents, map);
 }
 
-template<typename AgentType>
+template<typename AgentType, bool PreventImmediateReturn>
 std::vector<AgentType> CSP::processGroupTyped(
     const std::vector<AgentType>& agents,
     const Map& map
@@ -118,6 +119,12 @@ std::vector<AgentType> CSP::processGroupTyped(
         auto add_candidate = [&](const auto& pos, bool is_staying = false) {
             if (!map.isInBounds(pos) || map.isBlocked(pos)) {
                 return;
+            }
+
+            if constexpr (PreventImmediateReturn) {
+                if (!is_staying && agent.isImmediateReturn(pos)) {
+                    return;
+                }
             }
 
             Q_pos.push_back(
@@ -261,13 +268,16 @@ std::vector<AgentPath>CSP::resolve_(
     const Map& map,
     const std::vector<Scenario>& scenarios
 ) {
+    if (memory.prevent_immediate_return) {
+        return resolveTyped<MemoryAgent, true>(map, scenarios);
+    }
     if (memory.capacity > 0) {
         return resolveTyped<MemoryAgent>(map, scenarios);
     }
     return resolveTyped<Agent>(map, scenarios);
 }
 
-template<typename AgentType>
+template<typename AgentType, bool PreventImmediateReturn>
 std::vector<AgentPath> CSP::resolveTyped(
     const Map& map,
     const std::vector<Scenario>& scenarios
@@ -330,7 +340,7 @@ std::vector<AgentPath> CSP::resolveTyped(
         bool iteration_interrupted = false;
 
         for (const auto& group : groups) {
-            const auto processed_group = processGroupTyped(
+            const auto processed_group = processGroupTyped<AgentType, PreventImmediateReturn>(
                 group,
                 map
             );

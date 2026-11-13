@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <deque>
+#include <optional>
 
 class MemoryAgent : public Agent {
 public:
@@ -16,7 +17,12 @@ public:
         return std::find(history.begin(), history.end(), position) != history.end();
     }
 
+    bool isImmediateReturn(AgentCord next_position) const {
+        return previous_position.has_value() && next_position == *previous_position;
+    }
+
     void moveTo(AgentCord next_position) {
+        previous_position = position;
         if (next_position != position) {
             if (capacity > 0) {
                 if (history.size() == capacity) {
@@ -31,6 +37,7 @@ public:
 private:
     std::size_t capacity;
     std::deque<AgentCord> history;
+    std::optional<AgentCord> previous_position;
 };
 
 #endif // MAPF_MEMORY_AGENT_H

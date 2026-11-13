@@ -39,6 +39,10 @@ int main(int argc, char** argv) {
         .default_value(1)
         .scan<'i', int>()
         .help("CSP penalty for moving to a remembered position");
+    program.add_argument("--prevent-immediate-return")
+        .default_value(false)
+        .implicit_value(true)
+        .help("CSP forbids returning to the previous position immediately");
     program.add_argument("--visualize")
         .default_value(false)
         .implicit_value(true);
@@ -81,6 +85,8 @@ int main(int argc, char** argv) {
         try {
             const auto memory_size = program.get<int>("--memory-size");
             const auto memory_penalty = program.get<int>("--memory-penalty");
+            const auto prevent_immediate_return =
+                program.get<bool>("--prevent-immediate-return");
             if (memory_size < 0 || memory_penalty <= 0) {
                 throw std::invalid_argument(
                     "Memory size must be non-negative and memory penalty must be positive"
@@ -91,13 +97,17 @@ int main(int argc, char** argv) {
             auto interrupted = [&interrupt_handler]() {
                 return interrupt_handler.wasInterrupted();
             };
-            if (memory_size == 0) {
+            if (memory_size == 0 && !prevent_immediate_return) {
                 agents = CSP(std::move(fitness), interrupted).resolve(map, scenarios);
             } else {
                 agents = CSP(
                     std::move(fitness),
                     interrupted,
-                    {static_cast<std::size_t>(memory_size), memory_penalty}
+                    {
+                        static_cast<std::size_t>(memory_size),
+                        memory_size == 0 ? 0 : memory_penalty,
+                        prevent_immediate_return
+                    }
                 ).resolve(map, scenarios);
             }
         } catch (const std::exception& err) {
