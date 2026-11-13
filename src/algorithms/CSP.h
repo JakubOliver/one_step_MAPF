@@ -11,6 +11,7 @@
 #include <string>
 
 #include "../Agent.h"
+#include "../MemoryAgent.h"
 #include "Algorithm.h"
 
 class CSPTest;
@@ -60,11 +61,21 @@ public:
 
     static FitnessFunction getFitness(const std::string& name);
 
+    struct MemoryOptions {
+        std::size_t capacity;
+        int64_t penalty;
+    };
+
     CSP();
     explicit CSP(std::function<bool()> interruption_requested);
     explicit CSP(
         FitnessFunction fitness,
         std::function<bool()> interruption_requested
+    );
+    CSP(
+        FitnessFunction fitness,
+        std::function<bool()> interruption_requested,
+        MemoryOptions memory
     );
 
 private:
@@ -72,6 +83,7 @@ private:
     std::function<bool()> interruption_requested;
     bool group_solve_interrupted = false;
     FitnessFunction fitness;
+    MemoryOptions memory{0, 0};
 
     std::vector<AgentPath> resolve_(
         const Map& map,
@@ -83,10 +95,16 @@ private:
         const Map& map
     );
 
-    std::vector<Agent> processGroup(
-        const std::vector<Agent>& agents,
+    template<typename AgentType>
+    std::vector<AgentType> processGroupTyped(
+        const std::vector<AgentType>& agents,
+        const Map& map
+    );
+
+    template<typename AgentType>
+    std::vector<AgentPath> resolveTyped(
         const Map& map,
-        const FitnessFunction& fitness
+        const std::vector<Scenario>& scenarios
     );
 
 };

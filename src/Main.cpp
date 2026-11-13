@@ -31,6 +31,14 @@ int main(int argc, char** argv) {
     program.add_argument("--fitness")
         .default_value("manhattan")
         .help("CSP fitness function");
+    program.add_argument("--memory-size")
+        .default_value(0)
+        .scan<'i', int>()
+        .help("CSP recent-position memory size (0 disables memory)");
+    program.add_argument("--memory-penalty")
+        .default_value(1)
+        .scan<'i', int>()
+        .help("CSP penalty for moving to a remembered position");
     program.add_argument("--visualize")
         .default_value(false)
         .implicit_value(true);
@@ -71,12 +79,27 @@ int main(int argc, char** argv) {
     } else if (algorithm_name == "CSP") {
         util::InterruptHandler interrupt_handler;
         try {
-            agents = CSP(
-                CSP::getFitness(program.get<std::string>("--fitness")),
-                [&interrupt_handler]() {
-                    return interrupt_handler.wasInterrupted();
-                }
-            ).resolve(map, scenarios);
+            const auto memory_size = program.get<int>("--memory-size");
+            const auto memory_penalty = program.get<int>("--memory-penalty");
+            if (memory_size < 0 || memory_penalty <= 0) {
+                throw std::invalid_argument(
+                    "Memory size must be non-negative and memory penalty must be positive"
+                );
+            }
+
+            auto fitness = CSP::getFitness(program.get<std::string>("--fitness"));
+            auto interrupted = [&interrupt_handler]() {
+                return interrupt_handler.wasInterrupted();
+            };
+            if (memory_size == 0) {
+                agents = CSP(std::move(fitness), interrupted).resolve(map, scenarios);
+            } else {
+                agents = CSP(
+                    std::move(fitness),
+                    interrupted,
+                    {static_cast<std::size_t>(memory_size), memory_penalty}
+                ).resolve(map, scenarios);
+            }
         } catch (const std::exception& err) {
             std::cerr << err.what() << std::endl;
             return 1;

@@ -15,6 +15,8 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <type_traits>
+#include <limits>
 #include <vector>
 
 #include "ortools/sat/cp_model.h"
@@ -96,6 +98,17 @@ CSP::CSP(
     }
 }
 
+CSP::CSP(
+    FitnessFunction fitness,
+    std::function<bool()> interruption_requested,
+    MemoryOptions memory
+) : CSP(std::move(fitness), std::move(interruption_requested)) {
+    if (memory.capacity == 0 || memory.penalty <= 0) {
+        throw std::invalid_argument("CSP memory capacity and penalty must be positive");
+    }
+    this->memory = memory;
+}
+
 int64_t from_pos_to_index(
     AgentCord position,
     std::size_t map_width
@@ -109,7 +122,7 @@ std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,
     const Map& map
 ) {
-    return processGroup(agents, map, fitness);
+    return processGroupTyped(agents, map);
 }
 
 int64_t CSP::manhattanDistanceFitness(
@@ -185,10 +198,10 @@ CSP::FitnessFunction CSP::getFitness(const std::string& name) {
     );
 }
 
-std::vector<Agent> CSP::processGroup(
-    const std::vector<Agent>& agents,
-    const Map& map,
-    const FitnessFunction& fitness
+template<typename AgentType>
+std::vector<AgentType> CSP::processGroupTyped(
+    const std::vector<AgentType>& agents,
+    const Map& map
 ) {
     group_solve_interrupted = false;
 
@@ -198,6 +211,22 @@ std::vector<Agent> CSP::processGroup(
     agents_vars.reserve(agents.size());
 
     LinearExpr objective;
+
+    // Existing fitness functions operate on Agent values; preserve their interface.
+    std::vector<Agent> base_agents;
+    if constexpr (!std::is_same_v<AgentType, Agent>) {
+        base_agents.reserve(agents.size());
+        for (const auto& agent : agents) {
+            base_agents.push_back(agent);
+        }
+    }
+    const auto& fitness_agents = [&]() -> const std::vector<Agent>& {
+        if constexpr (std::is_same_v<AgentType, Agent>) {
+            return agents;
+        } else {
+            return base_agents;
+        }
+    }();
 
     for (const auto& agent : agents) {
         std::vector<int64_t> Q_pos;
@@ -214,7 +243,16 @@ std::vector<Agent> CSP::processGroup(
 
             Agent candidate = agent;
             candidate.position = pos;
-            costs.push_back(fitness(map, agents, candidate, is_staying));
+            auto cost = fitness(map, fitness_agents, candidate, is_staying);
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                if (!is_staying && agent.remembers(pos)) {
+                    if (cost > std::numeric_limits<int64_t>::max() - memory.penalty) {
+                        throw std::overflow_error("CSP memory penalty overflows fitness");
+                    }
+                    cost += memory.penalty;
+                }
+            }
+            costs.push_back(cost);
         };
 
         add_candidate(agent.position, true); 
@@ -302,7 +340,7 @@ std::vector<Agent> CSP::processGroup(
         return {};
     }
 
-    std::vector<Agent> updated_agents = agents;
+    std::vector<AgentType> updated_agents = agents;
 
     for (std::size_t i = 0; i < agents_vars.size(); ++i) {
         const int64_t index =
@@ -311,10 +349,15 @@ std::vector<Agent> CSP::processGroup(
         const int64_t x = index % map.width;
         const int64_t y = index / map.width;
 
-        updated_agents[i].position = {
+        const AgentCord next_position{
             static_cast<std::size_t>(x),
             static_cast<std::size_t>(y)
         };
+        if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+            updated_agents[i].moveTo(next_position);
+        } else {
+            updated_agents[i].position = next_position;
+        }
 
         /*
         std::cout << "Agent " << i
@@ -335,7 +378,18 @@ std::vector<AgentPath>CSP::resolve_(
     const Map& map,
     const std::vector<Scenario>& scenarios
 ) {
-    std::map<AgentCord, Agent> agents;
+    if (memory.capacity > 0) {
+        return resolveTyped<MemoryAgent>(map, scenarios);
+    }
+    return resolveTyped<Agent>(map, scenarios);
+}
+
+template<typename AgentType>
+std::vector<AgentPath> CSP::resolveTyped(
+    const Map& map,
+    const std::vector<Scenario>& scenarios
+) {
+    std::map<AgentCord, AgentType> agents;
     std::map<AgentCord, std::size_t> agent_indices;
     std::vector<std::vector<AgentCord>> paths(scenarios.size());
 
@@ -344,10 +398,14 @@ std::vector<AgentPath>CSP::resolve_(
         const AgentCord start{scenario.startX, scenario.startY};
         const AgentCord goal{scenario.goalX, scenario.goalY};
 
-        const auto [agent_it, inserted] = agents.emplace(
-            start,
-            Agent(start, goal)
-        );
+        auto make_agent = [&]() {
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                return AgentType(start, goal, memory.capacity);
+            } else {
+                return AgentType(start, goal);
+            }
+        };
+        const auto [agent_it, inserted] = agents.emplace(start, make_agent());
 
         agent_indices.emplace(agent_it->first, i);
         paths[i].push_back(start);
@@ -384,12 +442,12 @@ std::vector<AgentPath>CSP::resolve_(
         }
 
         const auto groups = grouping.getGroups(agents);
-        std::map<AgentCord, Agent> updated_agents;
+        std::map<AgentCord, AgentType> updated_agents;
         std::map<AgentCord, std::size_t> updated_agent_indices;
         bool iteration_interrupted = false;
 
         for (const auto& group : groups) {
-            const auto processed_group = processGroup(
+            const auto processed_group = processGroupTyped(
                 group,
                 map
             );
