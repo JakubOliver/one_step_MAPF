@@ -7,80 +7,25 @@
 
 #include <cstdint>
 #include <functional>
-#include <random>
 #include <string>
 
+#include "Fitness.h"
 #include "../Agent.h"
 #include "../MemoryAgent.h"
 #include "Algorithm.h"
 
 class CSPTest;
 
-class RandomFitness {
-private:
-    std::mt19937 generator;
-    std::normal_distribution<double> distribution;
-
-public:
-    RandomFitness();
-    explicit RandomFitness(std::uint32_t seed);
-
-    int64_t operator()(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-};
-
 class CSP : public Algorithm {
 private:
     friend class CSPTest;
 
-    static int64_t manhattanDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
-    static int64_t sqrtDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
-    static int64_t squaredDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
-    static int64_t piecewiseDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
-    static int64_t logarithmicDistanceFitness(
-        const Map& map,
-        const std::vector<Agent>& agents,
-        const Agent& agent,
-        bool is_staying
-    );
-
 public:
-    using FitnessFunction = std::function<int64_t(
-        const Map&,
-        const std::vector<Agent>&,
-        const Agent&,
-        bool
-    )>;
+    using FitnessFunction = Fitness::FitnessFunction;
 
-    static FitnessFunction getFitness(const std::string& name);
+    static FitnessFunction getFitness(const std::string& name) {
+        return Fitness::getFitness(name);
+    }
 
     struct MemoryOptions {
         std::size_t capacity;
