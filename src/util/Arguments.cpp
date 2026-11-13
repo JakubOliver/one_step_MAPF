@@ -24,6 +24,9 @@ std::optional<Arguments> parseArguments(
     program.add_argument("--fitness")
         .default_value("manhattan")
         .help("CSP fitness function");
+    program.add_argument("--distance")
+        .default_value("manhattan")
+        .help("CSP distance: manhattan or shortest-path");
     program.add_argument("--memory-size")
         .default_value(0)
         .scan<'i', int>()
@@ -65,6 +68,7 @@ std::optional<Arguments> parseArguments(
         .scenario_file = program.get<std::string>("scenario"),
         .algorithm = program.get<std::string>("--algorithm"),
         .fitness = program.get<std::string>("--fitness"),
+        .distance = program.get<std::string>("--distance"),
         .memory_size = program.get<int>("--memory-size"),
         .memory_penalty = program.get<int>("--memory-penalty"),
         .prevent_immediate_return = program.get<bool>("--prevent-immediate-return"),

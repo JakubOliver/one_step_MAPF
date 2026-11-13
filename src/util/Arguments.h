@@ -11,6 +11,7 @@ struct Arguments {
     std::string scenario_file;
     std::string algorithm;
     std::string fitness;
+    std::string distance;
     int memory_size;
     int memory_penalty;
     bool prevent_immediate_return;

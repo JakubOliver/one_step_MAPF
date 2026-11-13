@@ -20,6 +20,8 @@ public:
     RandomFitness();
     explicit RandomFitness(std::uint32_t seed);
 
+    int64_t evaluate(uint64_t distance, bool is_staying);
+
     int64_t operator()(
         const Map& map,
         const std::vector<Agent>& agents,
@@ -36,9 +38,11 @@ using FitnessFunction = std::function<int64_t(
     const Agent&,
     bool
 )>;
+using DistanceFunction = std::function<uint64_t(const Agent&)>;
 
 FitnessFunction getFitness(const std::string& name);
-FitnessFunction shortestPathFitness(const Map& map, const std::vector<Scenario>& scenarios);
+FitnessFunction getFitness(const std::string& name, DistanceFunction distance);
+DistanceFunction shortestPathDistance(const Map& map, const std::vector<Scenario>& scenarios);
 
 } // namespace Fitness
 

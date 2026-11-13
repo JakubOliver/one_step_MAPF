@@ -28,9 +28,18 @@ std::vector<AgentPath> runAlgorithm(
         );
     }
 
-    auto fitness = arguments.fitness == "shortest-path"
-        ? Fitness::shortestPathFitness(map, scenarios)
-        : CSP::getFitness(arguments.fitness);
+    // Preserve the original shortest-path fitness as an alias for linear cost.
+    const bool shortest_path_alias = arguments.fitness == "shortest-path";
+    const auto& fitness_name = shortest_path_alias ? std::string("manhattan") : arguments.fitness;
+    const auto& distance_name = shortest_path_alias ? std::string("shortest-path") : arguments.distance;
+    Fitness::FitnessFunction fitness;
+    if (distance_name == "manhattan") {
+        fitness = Fitness::getFitness(fitness_name);
+    } else if (distance_name == "shortest-path") {
+        fitness = Fitness::getFitness(fitness_name, Fitness::shortestPathDistance(map, scenarios));
+    } else {
+        throw std::invalid_argument("Unknown CSP distance: " + distance_name);
+    }
     auto interrupted = [&interrupt_handler]() {
         return interrupt_handler.wasInterrupted();
     };
