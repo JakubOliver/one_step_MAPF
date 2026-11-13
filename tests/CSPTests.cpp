@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <limits>
 #include <vector>
 
 #include "Agent.h"
@@ -395,4 +396,75 @@ TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
     ASSERT_EQ(paths[0].getLength(), 3);
     EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
     EXPECT_EQ(paths[0].getPathAtTime(2), AgentCord(2, 0));
+}
+
+TEST(CSPFitnessTest, NonlinearFitnessCostsAndWaitPenalties) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 4,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}, {{3, 0}, false}}
+    };
+    const std::vector<Agent> agents = {{{0, 0}, {3, 0}}};
+    const Agent at_goal({3, 0}, {3, 0});
+    const auto squared = CSP::getFitness("squared");
+    const auto logarithmic = CSP::getFitness("log");
+
+    EXPECT_EQ(squared(map, agents, agents[0], false), 18);
+    EXPECT_EQ(squared(map, agents, agents[0], true), 19);
+    EXPECT_EQ(squared(map, agents, at_goal, false), 0);
+    EXPECT_EQ(logarithmic(map, agents, agents[0], false), 1386);
+    EXPECT_EQ(logarithmic(map, agents, agents[0], true), 1586);
+    EXPECT_EQ(logarithmic(map, agents, at_goal, false), 0);
+}
+
+TEST(CSPFitnessTest, SquaredDistanceRejectsOverflow) {
+    const Map map{.type = "test", .height = 1, .width = 1, .map = {}};
+    const Agent agent({0, 0}, {static_cast<std::size_t>(3000000000ULL), 0});
+    const auto fitness = CSP::getFitness("squared");
+
+    EXPECT_THROW(fitness(map, {}, agent, false), std::overflow_error);
+}
+
+TEST_F(CSPTest, NonlinearFitnessWorksWithMemoryPenalty) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+    };
+    MemoryAgent agent({0, 0}, {0, 0}, 1);
+    agent.moveTo({1, 0});
+
+    for (const auto* name : {"squared", "piecewise", "log"}) {
+        CSP csp(CSP::getFitness(name), [] { return false; }, {1, 2000});
+        const auto result = processMemoryGroup(csp, {agent}, map);
+        ASSERT_EQ(result.size(), 1);
+        EXPECT_EQ(result[0].position, AgentCord(1, 0)) << name;
+    }
+}
+
+TEST(CSPFitnessTest, PiecewiseCostsAcrossThresholdAndWait) {
+    const Map map{.type = "test", .height = 1, .width = 1, .map = {}};
+    const auto fitness = CSP::getFitness("piecewise");
+    const Agent at_goal({0, 0}, {0, 0});
+    const Agent near({0, 0}, {3, 0});
+    const Agent boundary({0, 0}, {4, 0});
+    const Agent far({0, 0}, {5, 0});
+
+    EXPECT_EQ(fitness(map, {}, at_goal, false), 0);
+    EXPECT_EQ(fitness(map, {}, near, false), 18);
+    EXPECT_EQ(fitness(map, {}, boundary, false), 32);
+    EXPECT_EQ(fitness(map, {}, far, false), 48);
+    EXPECT_EQ(fitness(map, {}, far, true), 49);
+}
+
+TEST(CSPFitnessTest, PiecewiseDistanceRejectsOverflow) {
+    const Map map{.type = "test", .height = 1, .width = 1, .map = {}};
+    const Agent agent({0, 0}, {std::numeric_limits<std::size_t>::max(), 0});
+    const auto fitness = CSP::getFitness("piecewise");
+
+    if (sizeof(std::size_t) >= sizeof(int64_t)) {
+        EXPECT_THROW(fitness(map, {}, agent, false), std::overflow_error);
+    }
 }
