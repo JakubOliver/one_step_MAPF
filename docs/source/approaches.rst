@@ -60,8 +60,11 @@ CSP fitness functions
 ---------------------
 
 Select a fitness with ``--fitness NAME``. CSP minimizes the sum of these costs
-for each group. Let ``d`` be Manhattan distance from a candidate position to the
-agent's goal, and let a wait mean remaining at its current position.
+for each group. Let ``d`` be the selected distance from a candidate position to
+the agent's goal, and let a wait mean remaining at its current position.
+``--distance manhattan`` is the default; ``--distance shortest-path`` uses BFS
+to precompute distances around static obstacles for each distinct goal. It
+rejects unreachable starts, but other agents can still cause deadlocks.
 
 * ``manhattan`` — **implemented; default.** Cost is ``2 * d + 1`` for a wait
   and ``2 * d`` for a move.
@@ -80,11 +83,8 @@ agent's goal, and let a wait mean remaining at its current position.
 * ``random`` — **implemented.** A move costs ``d`` plus a rounded sample from
   a normal distribution with mean 1 and standard deviation 1. A wait costs 0.
   Samples are generated when candidate costs are constructed.
-* **Shortest-path distance — not implemented.** Replace Manhattan distance
-  with the shortest traversable path through the map, so static obstacles are
-  taken into account. This could be precomputed for each goal; unreachable
-  positions and preprocessing cost need consideration. Other agents and their
-  changing positions would still require separate handling.
+* ``shortest-path`` — compatibility alias for ``--fitness manhattan --distance
+  shortest-path``. The distance option can also be used with any other fitness.
 * **Other nonlinear distance functions — not implemented.** Other powers
   and other convex or concave transformations are candidates for
   experimentation. Symmetric situations may still cause deadlocks.

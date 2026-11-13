@@ -57,8 +57,15 @@ Choose `--fitness` from `manhattan` (default), `sqrt`, `squared`, `piecewise`,
 with `--memory-size N` (default 0, disabled) and `--memory-penalty P` (default 1).
 The penalty's effect depends on the fitness scale.
 
+Set `--distance shortest-path` to use precomputed distances around static
+obstacles with any fitness; `--distance manhattan` is the default. The
+shortest-path option rejects scenarios whose start cannot reach its goal;
+other agents can still cause deadlocks. The older `--fitness shortest-path`
+is an alias for linear fitness with shortest-path distance.
+
 ```sh
 ./out/build/release/MAPF map.map scenario.scen --algorithm CSP --fitness manhattan --memory-size 5 --memory-penalty 3
+./out/build/release/MAPF map.map scenario.scen --algorithm CSP --fitness squared --distance shortest-path
 ```
 
 Optionally, `--prevent-immediate-return` forbids a return in the next step;
