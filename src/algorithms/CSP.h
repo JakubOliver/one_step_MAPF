@@ -51,6 +51,27 @@ private:
         bool is_staying
     );
 
+    static int64_t squaredDistanceFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent,
+        bool is_staying
+    );
+
+    static int64_t piecewiseDistanceFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent,
+        bool is_staying
+    );
+
+    static int64_t logarithmicDistanceFitness(
+        const Map& map,
+        const std::vector<Agent>& agents,
+        const Agent& agent,
+        bool is_staying
+    );
+
 public:
     using FitnessFunction = std::function<int64_t(
         const Map&,

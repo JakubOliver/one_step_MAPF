@@ -171,6 +171,74 @@ int64_t CSP::sqrtDistanceFitness(
     return cost + (is_staying ? 200 : 0);
 }
 
+namespace {
+
+uint64_t checkedManhattanDistance(const Agent& agent) {
+    const auto difference = [](std::size_t first, std::size_t second) {
+        return first > second ? first - second : second - first;
+    };
+    const auto dx = difference(agent.position.first, agent.goal.first);
+    const auto dy = difference(agent.position.second, agent.goal.second);
+    if (dx > std::numeric_limits<uint64_t>::max() - dy) {
+        throw std::overflow_error("Manhattan distance is too large");
+    }
+    return static_cast<uint64_t>(dx) + static_cast<uint64_t>(dy);
+}
+
+} // namespace
+
+int64_t CSP::squaredDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    const auto distance = checkedManhattanDistance(agent);
+    constexpr auto max_squared =
+        (std::numeric_limits<int64_t>::max() - 1) / 2;
+    if (distance != 0 && distance > static_cast<uint64_t>(max_squared) / distance) {
+        throw std::overflow_error("Squared distance fitness is too large");
+    }
+    return 2 * static_cast<int64_t>(distance * distance) + (is_staying ? 1 : 0);
+}
+
+int64_t CSP::piecewiseDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    constexpr uint64_t threshold = 4;
+    constexpr uint64_t slope = 4 * threshold;
+    constexpr uint64_t threshold_cost = 2 * threshold * threshold;
+    constexpr uint64_t max_cost = std::numeric_limits<int64_t>::max() - 1;
+    const auto distance = checkedManhattanDistance(agent);
+
+    uint64_t cost;
+    if (distance <= threshold) {
+        cost = 2 * distance * distance;
+    } else {
+        const auto excess = distance - threshold;
+        if (excess > (max_cost - threshold_cost) / slope) {
+            throw std::overflow_error("Piecewise distance fitness is too large");
+        }
+        cost = threshold_cost + slope * excess;
+    }
+    return static_cast<int64_t>(cost) + (is_staying ? 1 : 0);
+}
+
+int64_t CSP::logarithmicDistanceFitness(
+    const Map&,
+    const std::vector<Agent>&,
+    const Agent& agent,
+    bool is_staying
+) {
+    constexpr double scale = 1000.0;
+    const auto distance = checkedManhattanDistance(agent);
+    return std::llround(scale * std::log1p(static_cast<double>(distance))) +
+           (is_staying ? 200 : 0);
+}
+
 CSP::FitnessFunction CSP::getFitness(const std::string& name) {
     using FitnessFactory = std::function<FitnessFunction()>;
 
@@ -180,6 +248,15 @@ CSP::FitnessFunction CSP::getFitness(const std::string& name) {
         }},
         {"sqrt", [] {
             return sqrtDistanceFitness;
+        }},
+        {"squared", [] {
+            return squaredDistanceFitness;
+        }},
+        {"piecewise", [] {
+            return piecewiseDistanceFitness;
+        }},
+        {"log", [] {
+            return logarithmicDistanceFitness;
         }},
         {"random", [] {
             return FitnessFunction(RandomFitness());
@@ -194,7 +271,7 @@ CSP::FitnessFunction CSP::getFitness(const std::string& name) {
 
     throw std::invalid_argument(
         "Unknown CSP fitness: " + name +
-        ". Available fitnesses: manhattan, sqrt, random"
+        ". Available fitnesses: manhattan, sqrt, squared, piecewise, log, random"
     );
 }
 
