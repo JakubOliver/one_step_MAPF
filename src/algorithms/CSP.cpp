@@ -192,6 +192,43 @@ std::vector<Agent> CSP::processGroup(
 ) {
     group_solve_interrupted = false;
 
+    if (agents.size() == 1) {
+        const auto& agent = agents.front();
+        Agent best = agent;
+        int64_t best_cost = 0;
+        bool found_candidate = false;
+
+        auto consider_candidate = [&](const AgentCord& pos, bool is_staying) {
+            if (!map.isInBounds(pos) || map.isBlocked(pos)) {
+                return;
+            }
+
+            Agent candidate = agent;
+            candidate.position = pos;
+            const int64_t cost = fitness(map, agents, candidate, is_staying);
+
+            if (!found_candidate || cost < best_cost) {
+                best.position = pos;
+                best_cost = cost;
+                found_candidate = true;
+            }
+        };
+
+        consider_candidate(agent.position, true);
+
+        for (const auto& pos : agent.getMoveTo()) {
+            consider_candidate(pos, false);
+        }
+
+        if (found_candidate) {
+            return {best};
+        }
+
+        group_solve_interrupted = true;
+        std::cerr << "CSP group solve stopped before finding a solution\n";
+        return {};
+    }
+
     CpModelBuilder cp_model;
 
     std::vector<IntVar> agents_vars;
