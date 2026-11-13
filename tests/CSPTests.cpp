@@ -7,6 +7,8 @@
 #include "Agent.h"
 #include "algorithms/CSP.h"
 #include "algorithms/Grouping.h"
+#include "util/Arguments.h"
+#include "util/RunAlgorithm.h"
 
 class CSPTest : public ::testing::Test {
 protected:
@@ -16,6 +18,14 @@ protected:
         const Map& map
     ) {
         return csp.processGroupTyped(agents, map);
+    }
+
+    static std::vector<MemoryAgent> processWithoutImmediateReturn(
+        CSP& csp,
+        const std::vector<MemoryAgent>& agents,
+        const Map& map
+    ) {
+        return csp.processGroupTyped<MemoryAgent, true>(agents, map);
     }
 
     static std::vector<Agent> processGroup(
@@ -467,4 +477,151 @@ TEST(CSPFitnessTest, PiecewiseDistanceRejectsOverflow) {
     if (sizeof(std::size_t) >= sizeof(int64_t)) {
         EXPECT_THROW(fitness(map, {}, agent, false), std::overflow_error);
     }
+}
+
+TEST_F(CSPTest, ImmediateReturnIsForbiddenButAllowedAfterWaiting) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    MemoryAgent agent({0, 0}, {0, 0}, 0);
+    agent.moveTo({1, 0});
+    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {0, 0, true});
+
+    auto result = processWithoutImmediateReturn(csp, {agent}, map);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(1, 0));
+
+    result = processWithoutImmediateReturn(csp, result, map);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(0, 0));
+}
+
+TEST_F(CSPTest, ImmediateReturnIsForbiddenWithMemoryPenalty) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+    };
+    MemoryAgent agent({0, 0}, {0, 0}, 2);
+    agent.moveTo({1, 0});
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+        return staying ? 10 : static_cast<int64_t>(candidate.position.first);
+    };
+    CSP csp(fitness, [] { return false; }, {2, 1, true});
+
+    const auto result = processWithoutImmediateReturn(csp, {agent}, map);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(2, 0));
+}
+
+TEST_F(CSPTest, ImmediateReturnIsPreventedAcrossIterations) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+    };
+    const std::vector<Scenario> scenarios = {{
+        .startX = 0, .startY = 0, .goalX = 2, .goalY = 0
+    }};
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+        return staying ? 10 : static_cast<int64_t>(candidate.position.first);
+    };
+    std::size_t checks = 0;
+    CSP csp(fitness, [&checks] { return checks++ >= 3; }, {0, 0, true});
+
+    const auto paths = csp.resolve(map, scenarios);
+    ASSERT_EQ(paths.size(), 1);
+    ASSERT_EQ(paths[0].getLength(), 3);
+    EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+    EXPECT_EQ(paths[0].getPathAtTime(2), AgentCord(2, 0));
+}
+
+namespace {
+
+std::optional<util::Arguments> parseTestArguments(
+    std::vector<std::string> arguments,
+    bool visualizer_available = true
+) {
+    std::vector<char*> argv;
+    for (auto& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    return util::parseArguments(
+        static_cast<int>(argv.size()),
+        argv.data(),
+        visualizer_available
+    );
+}
+
+} // namespace
+
+TEST(ArgumentsTest, PreservesDefaultsAndExplicitOptions) {
+    const auto defaults = parseTestArguments({"MAPF", "map", "scenario"});
+    ASSERT_TRUE(defaults.has_value());
+    EXPECT_EQ(defaults->algorithm, "PriorityPlanning");
+    EXPECT_EQ(defaults->fitness, "manhattan");
+    EXPECT_EQ(defaults->memory_size, 0);
+    EXPECT_EQ(defaults->memory_penalty, 1);
+    EXPECT_FALSE(defaults->prevent_immediate_return);
+    EXPECT_FALSE(defaults->validate);
+
+    const auto options = parseTestArguments({
+        "MAPF", "map", "scenario", "--algorithm", "CSP", "--fitness", "log",
+        "--memory-size", "5", "--memory-penalty", "3",
+        "--prevent-immediate-return", "--output", "paths.csv", "--validate"
+    });
+    ASSERT_TRUE(options.has_value());
+    EXPECT_EQ(options->map_file, "map");
+    EXPECT_EQ(options->scenario_file, "scenario");
+    EXPECT_EQ(options->algorithm, "CSP");
+    EXPECT_EQ(options->fitness, "log");
+    EXPECT_EQ(options->memory_size, 5);
+    EXPECT_EQ(options->memory_penalty, 3);
+    EXPECT_TRUE(options->prevent_immediate_return);
+    EXPECT_EQ(options->output_file, "paths.csv");
+    EXPECT_TRUE(options->validate);
+}
+
+TEST(ArgumentsTest, RejectsMissingArgumentsAndUnavailableVisualizer) {
+    testing::internal::CaptureStderr();
+    const auto missing = parseTestArguments({"MAPF"});
+    const auto unavailable = parseTestArguments(
+        {"MAPF", "map", "scenario", "--visualize"},
+        false
+    );
+    const auto errors = testing::internal::GetCapturedStderr();
+
+    EXPECT_FALSE(missing.has_value());
+    EXPECT_FALSE(unavailable.has_value());
+    EXPECT_NE(errors.find("Visualization support is disabled"), std::string::npos);
+}
+
+TEST(AlgorithmRunnerTest, RunsCspWithOptionsAndRejectsInvalidConfiguration) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    const std::vector<Scenario> scenarios = {{
+        .startX = 0, .startY = 0, .goalX = 1, .goalY = 0
+    }};
+    auto arguments = parseTestArguments({
+        "MAPF", "map", "scenario", "--algorithm", "CSP",
+        "--memory-size", "2", "--prevent-immediate-return"
+    });
+    ASSERT_TRUE(arguments.has_value());
+    const auto paths = util::runAlgorithm(*arguments, map, scenarios);
+    ASSERT_EQ(paths.size(), 1);
+    EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+
+    arguments->memory_size = -1;
+    EXPECT_THROW(util::runAlgorithm(*arguments, map, scenarios), std::invalid_argument);
+    arguments->algorithm = "unknown";
+    EXPECT_THROW(util::runAlgorithm(*arguments, map, scenarios), std::invalid_argument);
 }
