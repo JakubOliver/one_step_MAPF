@@ -312,6 +312,7 @@ target_link_libraries(
         mapf_core
         PRIVATE
         csv
+        argparse
         ortools::ortools
 )
 
@@ -324,7 +325,6 @@ target_link_libraries(
         MAPF
         PRIVATE
 
-        argparse
         mapf_core
 )
 
