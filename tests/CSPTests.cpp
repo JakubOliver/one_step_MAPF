@@ -5,9 +5,18 @@
 
 #include "Agent.h"
 #include "algorithms/CSP.h"
+#include "algorithms/Grouping.h"
 
 class CSPTest : public ::testing::Test {
 protected:
+    static std::vector<MemoryAgent> processMemoryGroup(
+        CSP& csp,
+        const std::vector<MemoryAgent>& agents,
+        const Map& map
+    ) {
+        return csp.processGroupTyped(agents, map);
+    }
+
     static std::vector<Agent> processGroup(
         CSP& csp,
         const std::vector<Agent>& agents,
@@ -298,4 +307,92 @@ TEST_F(CSPTest, ReturnsPartialPathsWhenInterruptedBetweenIterations) {
     ASSERT_EQ(paths[0].getLength(), 2);
     EXPECT_EQ(paths[0].getPathAtTime(0), AgentCord(0, 0));
     EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+}
+
+TEST(MemoryAgentTest, RemembersOnlyRecentDeparturesAndIgnoresWaiting) {
+    MemoryAgent agent({0, 0}, {3, 0}, 2);
+    agent.moveTo({1, 0});
+    agent.moveTo({1, 0});
+    agent.moveTo({2, 0});
+    EXPECT_TRUE(agent.remembers({0, 0}));
+    EXPECT_TRUE(agent.remembers({1, 0}));
+
+    agent.moveTo({3, 0});
+    EXPECT_FALSE(agent.remembers({0, 0}));
+    EXPECT_TRUE(agent.remembers({1, 0}));
+    EXPECT_TRUE(agent.remembers({2, 0}));
+}
+
+TEST(MemoryAgentTest, GroupingPreservesMemory) {
+    MemoryAgent agent({0, 0}, {2, 0}, 2);
+    agent.moveTo({1, 0});
+    std::map<AgentCord, MemoryAgent> agents;
+    agents.emplace(agent.position, agent);
+
+    const auto groups = Grouping().getGroups(agents);
+    ASSERT_EQ(groups.size(), 1);
+    ASSERT_EQ(groups[0].size(), 1);
+    EXPECT_TRUE(groups[0][0].remembers({0, 0}));
+}
+
+TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {
+    Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+    };
+    MemoryAgent agent({0, 0}, {0, 0}, 2);
+    agent.moveTo({1, 0});
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+        return staying ? 10 : static_cast<int64_t>(candidate.position.first);
+    };
+    CSP csp(fitness, [] { return false; }, {2, 5});
+
+    auto result = processMemoryGroup(csp, {agent}, map);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(2, 0));
+    EXPECT_TRUE(result[0].remembers({1, 0}));
+
+    const Map blocked_map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true}}
+    };
+    result = processMemoryGroup(csp, {agent}, blocked_map);
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(0, 0));
+}
+
+TEST_F(CSPTest, RejectsInvalidMemoryConfiguration) {
+    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] { return false; }, {0, 1})), std::invalid_argument);
+    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] { return false; }, {1, 0})), std::invalid_argument);
+}
+
+TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+    };
+    const std::vector<Scenario> scenarios = {{
+        .startX = 0,
+        .startY = 0,
+        .goalX = 2,
+        .goalY = 0
+    }};
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+        return staying ? 10 : static_cast<int64_t>(candidate.position.first);
+    };
+    std::size_t checks = 0;
+    CSP csp(fitness, [&checks] { return checks++ >= 3; }, {2, 5});
+
+    const auto paths = csp.resolve(map, scenarios);
+
+    ASSERT_EQ(paths.size(), 1);
+    ASSERT_EQ(paths[0].getLength(), 3);
+    EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
+    EXPECT_EQ(paths[0].getPathAtTime(2), AgentCord(2, 0));
 }
