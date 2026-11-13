@@ -12,6 +12,9 @@ on:
       - ".github/workflows/tests.yml"
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Daily at 02:13 UTC on the default branch.
+    - cron: "13 2 * * *"
 
 permissions:
   contents: read
@@ -83,7 +86,7 @@ jobs:
         run: ccache --show-stats
 
       - name: Save compiler cache
-        if: always() && steps.ccache-initialize.outcome == 'success'
+        if: success() && steps.ccache-initialize.outcome == 'success'
         uses: actions/cache/save@v6
         with:
           path: ${{ env.CCACHE_DIR }}
