@@ -3,6 +3,7 @@
 
 #include "../Agent.h"
 #include "../Map.h"
+#include "../Scenario.h"
 
 #include <cstdint>
 #include <functional>
@@ -37,6 +38,7 @@ using FitnessFunction = std::function<int64_t(
 )>;
 
 FitnessFunction getFitness(const std::string& name);
+FitnessFunction shortestPathFitness(const Map& map, const std::vector<Scenario>& scenarios);
 
 } // namespace Fitness
 

@@ -28,7 +28,9 @@ std::vector<AgentPath> runAlgorithm(
         );
     }
 
-    auto fitness = CSP::getFitness(arguments.fitness);
+    auto fitness = arguments.fitness == "shortest-path"
+        ? Fitness::shortestPathFitness(map, scenarios)
+        : CSP::getFitness(arguments.fitness);
     auto interrupted = [&interrupt_handler]() {
         return interrupt_handler.wasInterrupted();
     };

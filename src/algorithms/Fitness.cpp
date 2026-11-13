@@ -1,8 +1,10 @@
 #include "Fitness.h"
+#include "DistanceCache.h"
 
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -161,6 +163,16 @@ int64_t logarithmicDistanceFitness(
 
 } // namespace
 
+Fitness::FitnessFunction Fitness::shortestPathFitness(
+    const Map& map,
+    const std::vector<Scenario>& scenarios
+) {
+    auto distances = std::make_shared<DistanceCache>(map, scenarios);
+    return [distances](const Map&, const std::vector<Agent>&, const Agent& agent, bool is_staying) {
+        return 2 * distances->distance(agent.position, agent.goal) + (is_staying ? 1 : 0);
+    };
+}
+
 Fitness::FitnessFunction Fitness::getFitness(const std::string& name) {
     using FitnessFactory = std::function<FitnessFunction()>;
 
@@ -193,7 +205,7 @@ Fitness::FitnessFunction Fitness::getFitness(const std::string& name) {
 
     throw std::invalid_argument(
         "Unknown CSP fitness: " + name +
-        ". Available fitnesses: manhattan, sqrt, squared, piecewise, log, random"
+        ". Available fitnesses: manhattan, shortest-path, sqrt, squared, piecewise, log, random"
     );
 }
 
