@@ -89,14 +89,7 @@ std::vector<AgentType> CSP::processGroupTyped(
 ) {
     group_solve_interrupted = false;
 
-    CpModelBuilder cp_model;
-
-    std::vector<IntVar> agents_vars;
-    agents_vars.reserve(agents.size());
-
-    LinearExpr objective;
-
-    // Existing fitness functions operate on Agent values; preserve their interface.
+    // Fitness functions consume base Agent values even when agents have memory.
     std::vector<Agent> base_agents;
     if constexpr (!std::is_same_v<AgentType, Agent>) {
         base_agents.reserve(agents.size());
@@ -111,6 +104,72 @@ std::vector<AgentType> CSP::processGroupTyped(
             return base_agents;
         }
     }();
+
+    auto candidate_cost = [&](const AgentType& agent, AgentCord pos, bool is_staying) {
+        Agent candidate = agent;
+        candidate.position = pos;
+        auto cost = fitness(map, fitness_agents, candidate, is_staying);
+        if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+            if (!is_staying && agent.remembers(pos)) {
+                if (cost > std::numeric_limits<int64_t>::max() - memory.penalty) {
+                    throw std::overflow_error("CSP memory penalty overflows fitness");
+                }
+                cost += memory.penalty;
+            }
+        }
+        return cost;
+    };
+
+    if (agents.size() == 1) {
+        const auto& agent = agents.front();
+        AgentType best = agent;
+        int64_t best_cost = 0;
+        bool found_candidate = false;
+        AgentCord best_position = agent.position;
+
+        auto consider_candidate = [&](const AgentCord& pos, bool is_staying) {
+            if (!map.isInBounds(pos) || map.isBlocked(pos)) {
+                return;
+            }
+            if constexpr (PreventImmediateReturn) {
+                if (!is_staying && agent.isImmediateReturn(pos)) {
+                    return;
+                }
+            }
+
+            const auto cost = candidate_cost(agent, pos, is_staying);
+            if (!found_candidate || cost < best_cost) {
+                best_position = pos;
+                best_cost = cost;
+                found_candidate = true;
+            }
+        };
+
+        consider_candidate(agent.position, true);
+        for (const auto& pos : agent.getMoveTo()) {
+            consider_candidate(pos, false);
+        }
+
+        if (found_candidate) {
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                best.moveTo(best_position);
+            } else {
+                best.position = best_position;
+            }
+            return {best};
+        }
+
+        group_solve_interrupted = true;
+        std::cerr << "CSP group solve stopped before finding a solution\n";
+        return {};
+    }
+
+    CpModelBuilder cp_model;
+
+    std::vector<IntVar> agents_vars;
+    agents_vars.reserve(agents.size());
+
+    LinearExpr objective;
 
     for (const auto& agent : agents) {
         std::vector<int64_t> Q_pos;
@@ -131,18 +190,7 @@ std::vector<AgentType> CSP::processGroupTyped(
                 from_pos_to_index(pos, map.width)
             );
 
-            Agent candidate = agent;
-            candidate.position = pos;
-            auto cost = fitness(map, fitness_agents, candidate, is_staying);
-            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
-                if (!is_staying && agent.remembers(pos)) {
-                    if (cost > std::numeric_limits<int64_t>::max() - memory.penalty) {
-                        throw std::overflow_error("CSP memory penalty overflows fitness");
-                    }
-                    cost += memory.penalty;
-                }
-            }
-            costs.push_back(cost);
+            costs.push_back(candidate_cost(agent, pos, is_staying));
         };
 
         add_candidate(agent.position, true); 

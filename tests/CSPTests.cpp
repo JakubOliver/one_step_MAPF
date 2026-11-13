@@ -179,6 +179,61 @@ TEST_F(CSPTest, AgentMovesTowardsTheGoal) {
     CSPTest::validateMovement(csp, map, agents, expectedPath);
 }
 
+TEST_F(CSPTest, SingleAgentEvaluatesOnlyValidCandidatesAndUsesFitness) {
+    const Map map{
+        .type = "test",
+        .height = 2,
+        .width = 2,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, true},
+            {{0, 1}, false},
+            {{1, 1}, false}
+        }
+    };
+    const std::vector<Agent> agents = {{{0, 0}, {1, 0}}};
+    std::vector<std::pair<AgentCord, bool>> evaluated;
+    CSP csp(
+        [&evaluated](const Map&, const std::vector<Agent>& group,
+                     const Agent& candidate, bool is_staying) -> int64_t {
+            EXPECT_EQ(group.size(), 1);
+            evaluated.emplace_back(candidate.position, is_staying);
+            return is_staying ? 10 : -1;
+        },
+        [] { return false; }
+    );
+
+    const auto updated = processGroup(csp, agents, map);
+
+    ASSERT_EQ(updated.size(), 1);
+    EXPECT_EQ(updated[0].position, AgentCord(0, 1));
+    EXPECT_EQ(updated[0].id, agents[0].id);
+    ASSERT_EQ(evaluated.size(), 2);
+    EXPECT_EQ(evaluated[0], std::make_pair(AgentCord(0, 0), true));
+    EXPECT_EQ(evaluated[1], std::make_pair(AgentCord(0, 1), false));
+}
+
+TEST_F(CSPTest, SingleAgentCanPreferStaying) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    const std::vector<Agent> agents = {{{0, 0}, {1, 0}}};
+    CSP csp(
+        [](const Map&, const std::vector<Agent>&, const Agent&, bool is_staying) {
+            return is_staying ? int64_t{-5} : int64_t{0};
+        },
+        [] { return false; }
+    );
+
+    const auto updated = processGroup(csp, agents, map);
+
+    ASSERT_EQ(updated.size(), 1);
+    EXPECT_EQ(updated[0].position, AgentCord(0, 0));
+}
+
 TEST_F(CSPTest, AgentsMovesTowardsTheGoal) {
     // A0 _ G0 
     // A1 _ G1
