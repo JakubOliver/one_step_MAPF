@@ -21,10 +21,15 @@ Solver approaches
   LaCAM is an open question from the consultation.
 * **Multi-step lookahead — not implemented.** Consider additional future steps
   when choosing the current move, depending on the role of LaCAM.
-* **Alternative solutions — not implemented.** Repeatedly solve while excluding
-  previous solutions or fitness values. Excluding a fitness value can also skip
-  other solutions with the same value; excluding individual solutions may incur
-  additional overhead.
+* **Alternative solutions — experimental API.** ``CSP::enumerateGroup`` lazily
+  enumerates one-step configurations from lowest to highest cost by excluding
+  each complete position assignment. Equal-cost configurations are retained.
+  Candidate costs are calculated once per enumeration, including random fitness.
+  ``CSP::enumerateGroups`` combines independent groups (such as those produced by
+  ``Grouping``), but does not sort combinations by total cost. It caches group
+  results, so both runtime and memory use may grow substantially. These APIs do
+  not change the normal CSP solver. The CSP object and map must outlive the
+  generators; interruption or a solver failure raises an exception.
 * **Global sum of group optima — not implemented.** The consultation notes
   suggest that, if groups are independent, the sum of their local optima may
   already be the global sum optimum. The usefulness of a separate optimization

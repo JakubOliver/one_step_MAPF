@@ -14,6 +14,8 @@
 #include <utility>
 #include <type_traits>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <vector>
 
 #include "ortools/sat/cp_model.h"
@@ -74,6 +76,190 @@ int64_t from_pos_to_index(
         position.first + position.second * map_width
     );
 }
+
+template<typename AgentType>
+std::generator<std::vector<AgentType>> CSP::enumerateGroup(
+    std::vector<AgentType> agents,
+    const Map& map
+) {
+    if (agents.empty()) {
+        co_yield std::vector<AgentType>{};
+        co_return;
+    }
+
+    std::vector<Agent> base_agents;
+    base_agents.reserve(agents.size());
+    for (const auto& agent : agents) {
+        base_agents.push_back(agent);
+    }
+
+    CpModelBuilder model;
+    std::vector<IntVar> positions;
+    LinearExpr objective;
+
+    for (const auto& agent : agents) {
+        std::vector<int64_t> candidates;
+        std::vector<int64_t> costs;
+        auto add_candidate = [&](AgentCord position, bool staying) {
+            if (!map.isInBounds(position) || map.isBlocked(position)) {
+                return;
+            }
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                if (!staying && memory.prevent_immediate_return && agent.isImmediateReturn(position)) {
+                    return;
+                }
+            }
+
+            Agent candidate = agent;
+            candidate.position = position;
+            auto cost = fitness(map, base_agents, candidate, staying);
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                if (!staying && agent.remembers(position)) {
+                    if (cost > std::numeric_limits<int64_t>::max() - memory.penalty) {
+                        throw std::overflow_error("CSP memory penalty overflows fitness");
+                    }
+                    cost += memory.penalty;
+                }
+            }
+            candidates.push_back(from_pos_to_index(position, map.width));
+            costs.push_back(cost);
+        };
+
+        // Costs, including random fitness, are sampled once for this enumeration.
+        add_candidate(agent.position, true);
+        for (const auto& position : agent.getMoveTo()) {
+            add_candidate(position, false);
+        }
+        if (candidates.empty()) {
+            co_return;
+        }
+
+        const auto position = model.NewIntVar(Domain::FromValues(candidates));
+        positions.push_back(position);
+        const auto choice = model.NewIntVar(Domain(0, static_cast<int64_t>(candidates.size() - 1)));
+        model.AddElement(choice, candidates, position);
+        const auto cost = model.NewIntVar(Domain::FromValues(costs));
+        model.AddElement(choice, costs, cost);
+        objective += cost;
+    }
+
+    model.AddAllDifferent(positions);
+    for (std::size_t first = 0; first < agents.size(); ++first) {
+        for (std::size_t second = first + 1; second < agents.size(); ++second) {
+            auto forbidden = model.AddForbiddenAssignments({positions[first], positions[second]});
+            forbidden.AddTuple({
+                from_pos_to_index(agents[second].position, map.width),
+                from_pos_to_index(agents[first].position, map.width)
+            });
+        }
+    }
+    model.Minimize(objective);
+
+    SatParameters parameters;
+    parameters.set_catch_sigint_signal(false);
+    while (true) {
+        if (interruption_requested()) {
+            throw std::runtime_error("CSP enumeration interrupted");
+        }
+        const auto response = SolveWithParameters(model.Build(), parameters);
+        if (response.status() == CpSolverStatus::INFEASIBLE) {
+            co_return;
+        }
+        if (response.status() != CpSolverStatus::OPTIMAL) {
+            throw std::runtime_error("CSP enumeration did not find an optimal solution");
+        }
+
+        std::vector<int64_t> assignment;
+        std::vector<AgentType> result = agents;
+        for (std::size_t i = 0; i < positions.size(); ++i) {
+            const auto index = SolutionIntegerValue(response, positions[i]);
+            assignment.push_back(index);
+            const AgentCord next{
+                static_cast<std::size_t>(index % map.width),
+                static_cast<std::size_t>(index / map.width)
+            };
+            if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+                result[i].moveTo(next);
+            } else {
+                result[i].position = next;
+            }
+        }
+        model.AddForbiddenAssignments(positions).AddTuple(assignment);
+        co_yield result;
+    }
+}
+
+template<typename AgentType>
+std::generator<std::vector<std::vector<AgentType>>> CSP::enumerateGroups(
+    std::vector<std::vector<AgentType>> groups,
+    const Map& map
+) {
+    using Generator = std::generator<std::vector<AgentType>>;
+    struct State {
+        Generator generator;
+        std::optional<decltype(std::declval<Generator&>().begin())> iterator;
+        std::vector<std::vector<AgentType>> cache;
+        bool exhausted = false;
+    };
+
+    std::vector<std::unique_ptr<State>> states;
+    for (auto& group : groups) {
+        states.push_back(std::make_unique<State>(State{enumerateGroup(std::move(group), map)}));
+    }
+    auto ensure = [](State& state, std::size_t index) {
+        if (index < state.cache.size()) {
+            return true;
+        }
+        if (state.exhausted) {
+            return false;
+        }
+        if (!state.iterator) {
+            state.iterator.emplace(state.generator.begin());
+        } else {
+            ++*state.iterator;
+        }
+        if (*state.iterator == state.generator.end()) {
+            state.exhausted = true;
+            return false;
+        }
+        state.cache.push_back(**state.iterator);
+        return true;
+    };
+
+    std::vector<std::size_t> indices(states.size(), 0);
+    for (auto& state : states) {
+        if (!ensure(*state, 0)) {
+            co_return;
+        }
+    }
+
+    // TODO: enumerate combinations in order of their total fitness.
+    while (true) {
+        std::vector<std::vector<AgentType>> result;
+        for (std::size_t i = 0; i < states.size(); ++i) {
+            result.push_back(states[i]->cache[indices[i]]);
+        }
+        co_yield result;
+
+        std::size_t i = states.size();
+        while (i > 0) {
+            --i;
+            if (ensure(*states[i], indices[i] + 1)) {
+                ++indices[i];
+                break;
+            }
+            indices[i] = 0;
+        }
+        if (i == 0 && (states.empty() || indices[0] == 0)) {
+            co_return;
+        }
+    }
+}
+
+template std::generator<std::vector<Agent>> CSP::enumerateGroup(std::vector<Agent>, const Map&);
+template std::generator<std::vector<MemoryAgent>> CSP::enumerateGroup(std::vector<MemoryAgent>, const Map&);
+template std::generator<std::vector<std::vector<Agent>>> CSP::enumerateGroups(std::vector<std::vector<Agent>>, const Map&);
+template std::generator<std::vector<std::vector<MemoryAgent>>> CSP::enumerateGroups(std::vector<std::vector<MemoryAgent>>, const Map&);
 
 std::vector<Agent> CSP::processGroup(
     const std::vector<Agent>& agents,

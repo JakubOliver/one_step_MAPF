@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <generator>
 #include <string>
 
 #include "Fitness.h"
@@ -43,6 +44,20 @@ public:
         FitnessFunction fitness,
         std::function<bool()> interruption_requested,
         MemoryOptions memory
+    );
+
+    // Experimental one-step enumeration. The CSP and map must outlive the generator.
+    // Groups supplied to enumerateGroups must be independent, as produced by Grouping.
+    template<typename AgentType>
+    std::generator<std::vector<AgentType>> enumerateGroup(
+        std::vector<AgentType> agents,
+        const Map& map
+    );
+
+    template<typename AgentType>
+    std::generator<std::vector<std::vector<AgentType>>> enumerateGroups(
+        std::vector<std::vector<AgentType>> groups,
+        const Map& map
     );
 
 private:
