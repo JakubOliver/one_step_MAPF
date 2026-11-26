@@ -15,7 +15,14 @@ class Validator {
 private:
     static std::optional<std::string> pathsMatchScenarios(
         const std::vector<Scenario>& scenarios,
-        const std::vector<AgentPath>& paths
+        const std::vector<AgentPath>& paths,
+        bool require_goal
+    );
+    static std::pair<bool, std::optional<std::string>> validatePaths(
+        const Map& map,
+        const std::vector<Scenario>& scenarios,
+        const std::vector<AgentPath>& paths,
+        bool require_goal
     );
     static std::optional<std::string> pathsUseValidPositions(
         const Map& map,
@@ -37,6 +44,13 @@ private:
 
 public:
     static std::pair<bool, std::optional<std::string>> validate(
+        const Map& map,
+        const std::vector<Scenario>& scenarios,
+        const std::vector<AgentPath>& paths
+    );
+
+    // Shorter paths remain at their last position until the longest path ends.
+    static std::pair<bool, std::optional<std::string>> validatePartial(
         const Map& map,
         const std::vector<Scenario>& scenarios,
         const std::vector<AgentPath>& paths
