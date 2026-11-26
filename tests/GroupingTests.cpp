@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -31,16 +32,16 @@ std::map<Position, Agent> makeAgents(
 }
 
 PositionGroups canonicalizeGroups(
-    const std::vector<std::vector<Agent>>& groups
+    const std::vector<Group<Agent>>& groups
 ) {
     PositionGroups positions;
     positions.reserve(groups.size());
 
     for (const auto& group : groups) {
         PositionGroup groupPositions;
-        groupPositions.reserve(group.size());
+        groupPositions.reserve(group.agents.size());
 
-        for (const auto& agent : group) {
+        for (const auto& agent : group.agents) {
             groupPositions.push_back(agent.position);
         }
 
@@ -130,6 +131,84 @@ TEST(GroupingTest, MergesGroupsConnectedByLaterAgent) {
 
     const auto expected = canonicalizeExpected({positions});
     EXPECT_EQ(canonicalizeGroups(groups), expected);
+}
+
+TEST(GroupingTest, SeparatesAgentsAcrossBlockedMiddleCell) {
+    const Map map{.type = "test", .height = 1, .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}};
+    const auto agents = makeAgents({{0, 0}, {2, 0}});
+
+    EXPECT_EQ(canonicalizeGroups(Grouping().getGroups(agents, map)),
+              canonicalizeExpected({{{0, 0}}, {{2, 0}}}));
+}
+
+TEST(GroupingTest, DiagonalAgentsNeedOnlyOneSharedOpenCell) {
+    const auto agents = makeAgents({{0, 0}, {1, 1}});
+    const Map one_open{.type = "test", .height = 2, .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, true}, {{0, 1}, false}, {{1, 1}, false}}};
+    const Map blocked{.type = "test", .height = 2, .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, true}, {{0, 1}, true}, {{1, 1}, false}}};
+
+    EXPECT_EQ(Grouping().getGroups(agents, one_open).size(), 1);
+    EXPECT_EQ(Grouping().getGroups(agents, blocked).size(), 2);
+}
+
+TEST(GroupingTest, KeepsIndirectConnectionsAcrossOpenCells) {
+    const Map map{.type = "test", .height = 1, .width = 5,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
+                {{3, 0}, false}, {{4, 0}, false}}};
+    const auto agents = makeAgents({{0, 0}, {2, 0}, {4, 0}});
+
+    EXPECT_EQ(Grouping().getGroups(agents, map).size(), 1);
+}
+
+TEST(GroupingTest, ChecksVerticalMiddleCellAndKeepsAdjacentAgentsTogether) {
+    const Map map{.type = "test", .height = 4, .width = 1,
+        .map = {{{0, 0}, false}, {{0, 1}, true}, {{0, 2}, false}, {{0, 3}, false}}};
+    const auto agents = makeAgents({{0, 0}, {0, 2}, {0, 3}});
+
+    EXPECT_EQ(canonicalizeGroups(Grouping().getGroups(agents, map)),
+              canonicalizeExpected({{{0, 0}}, {{0, 2}, {0, 3}}}));
+}
+
+TEST(GroupingTest, DiagonalAgentsCanMeetAtEitherIntermediateCell) {
+    const auto agents = makeAgents({{0, 0}, {1, 1}});
+    const Map map{.type = "test", .height = 2, .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{0, 1}, true}, {{1, 1}, false}}};
+
+    EXPECT_EQ(Grouping().getGroups(agents, map).size(), 1);
+}
+
+TEST(GroupingTest, RecordsEveryEdgeInCycleOnce) {
+    const Map map{.type = "test", .height = 2, .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{0, 1}, false}, {{1, 1}, false}}};
+    const auto agents = makeAgents({{0, 0}, {1, 0}, {0, 1}, {1, 1}});
+    const auto groups = Grouping().getGroups(agents, map);
+
+    ASSERT_EQ(groups.size(), 1);
+    const auto& group = groups.front();
+    ASSERT_EQ(group.agents.size(), 4);
+    EXPECT_EQ(group.edges.size(), 6);
+    std::set<std::pair<Position, Position>> edges;
+    for (const auto& [first, second] : group.edges) {
+        ASSERT_LT(first, group.agents.size());
+        ASSERT_LT(second, group.agents.size());
+        EXPECT_LT(first, second);
+        auto positions = std::minmax(group.agents[first].position, group.agents[second].position);
+        EXPECT_TRUE(edges.emplace(positions.first, positions.second).second);
+    }
+    EXPECT_EQ(edges.size(), 6);
+}
+
+TEST(GroupingTest, OmitsBlockedEdgeWithinConnectedGroup) {
+    const Map map{.type = "test", .height = 2, .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false},
+                {{0, 1}, false}, {{1, 1}, false}, {{2, 1}, false}}};
+    const auto agents = makeAgents({{0, 0}, {2, 0}, {1, 1}});
+    const auto groups = Grouping().getGroups(agents, map);
+
+    ASSERT_EQ(groups.size(), 1);
+    EXPECT_EQ(groups.front().edges.size(), 2);
 }
 
 }
