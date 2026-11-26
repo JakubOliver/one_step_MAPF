@@ -2,8 +2,8 @@
 // Created by jakub on 10/11/26.
 //
 
-#include "Grouping.h"
-#include "../MemoryAgent.h"
+#include "algorithms/csp/Grouping.h"
+#include "algorithms/csp/MemoryAgent.h"
 
 #include <algorithm>
 #include <queue>

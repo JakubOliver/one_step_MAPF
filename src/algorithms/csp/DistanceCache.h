@@ -1,8 +1,8 @@
 #ifndef MAPF_DISTANCE_CACHE_H
 #define MAPF_DISTANCE_CACHE_H
 
-#include "../Map.h"
-#include "../Scenario.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <cstdint>
 #include <map>

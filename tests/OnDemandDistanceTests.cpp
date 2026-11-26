@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "algorithms/DistanceCache.h"
-#include "algorithms/OnDemandDistance.h"
+#include "algorithms/csp/DistanceCache.h"
+#include "algorithms/csp/OnDemandDistance.h"
 
 #include <random>
 #include <stdexcept>

@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 
-#include "Agent.h"
-#include "AgentPath.h"
-#include "Map.h"
-#include "Scenario.h"
+#include "model/Agent.h"
+#include "model/AgentPath.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 #include "validation/Validator.h"
 
 namespace {

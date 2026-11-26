@@ -4,11 +4,11 @@
 #include <limits>
 #include <vector>
 
-#include "Agent.h"
-#include "algorithms/CSP.h"
-#include "algorithms/Grouping.h"
-#include "util/Arguments.h"
-#include "util/RunAlgorithm.h"
+#include "model/Agent.h"
+#include "algorithms/csp/CSP.h"
+#include "algorithms/csp/Grouping.h"
+#include "io/Arguments.h"
+#include "app/RunAlgorithm.h"
 
 class CSPTest : public ::testing::Test {
 protected:

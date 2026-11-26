@@ -1,6 +1,6 @@
 #include "Benchmark.h"
 
-#include "algorithms/Fitness.h"
+#include "algorithms/csp/Fitness.h"
 
 namespace benchmark {
 

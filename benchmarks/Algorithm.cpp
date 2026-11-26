@@ -1,7 +1,7 @@
 #include "Benchmark.h"
 
-#include "algorithms/CSP.h"
-#include "algorithms/Fitness.h"
+#include "algorithms/csp/CSP.h"
+#include "algorithms/csp/Fitness.h"
 #include "validation/Validator.h"
 
 #include <iostream>

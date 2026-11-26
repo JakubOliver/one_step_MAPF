@@ -7,9 +7,9 @@
 #include <cstdlib>
 #include <vector>
 
-#include "InputLoader.h"
-#include "algorithms/CSP.h"
-#include "algorithms/Fitness.h"
+#include "io/InputLoader.h"
+#include "algorithms/csp/CSP.h"
+#include "algorithms/csp/Fitness.h"
 #include "validation/Validator.h"
 
 namespace {

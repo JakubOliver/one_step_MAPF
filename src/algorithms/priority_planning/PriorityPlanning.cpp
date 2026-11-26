@@ -2,7 +2,7 @@
 // Created by jakub on 10/6/26.
 //
 
-#include "PriorityPlanning.h"
+#include "algorithms/priority_planning/PriorityPlanning.h"
 
 #include <algorithm>
 #include <limits>

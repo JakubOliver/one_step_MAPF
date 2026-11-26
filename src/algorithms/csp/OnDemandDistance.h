@@ -1,8 +1,8 @@
 #ifndef MAPF_ON_DEMAND_DISTANCE_H
 #define MAPF_ON_DEMAND_DISTANCE_H
 
-#include "../Map.h"
-#include "../Scenario.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <cstdint>
 #include <map>

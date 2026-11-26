@@ -5,7 +5,7 @@
 #ifndef MAPF_PRIORITYPLANING_H
 #define MAPF_PRIORITYPLANING_H
 
-#include "Algorithm.h"
+#include "algorithms/Algorithm.h"
 
 #include <cstddef>
 #include <map>

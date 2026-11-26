@@ -1,8 +1,8 @@
-#include "RunAlgorithm.h"
+#include "app/RunAlgorithm.h"
 
-#include "InterruptHandler.h"
-#include "../algorithms/CSP.h"
-#include "../algorithms/PriorityPlanning.h"
+#include "util/InterruptHandler.h"
+#include "algorithms/csp/CSP.h"
+#include "algorithms/priority_planning/PriorityPlanning.h"
 
 #include <stdexcept>
 #include <utility>

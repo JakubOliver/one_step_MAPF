@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "algorithms/DistanceCache.h"
-#include "algorithms/Fitness.h"
-#include "algorithms/CSP.h"
+#include "algorithms/csp/DistanceCache.h"
+#include "algorithms/csp/Fitness.h"
+#include "algorithms/csp/CSP.h"
 
 #include <stdexcept>
 

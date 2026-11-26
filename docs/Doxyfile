@@ -8,7 +8,7 @@ CREATE_SUBDIRS         = NO
 INPUT                  = ../src
 FILE_PATTERNS          = *.h *.cpp
 RECURSIVE              = YES
-EXCLUDE                = ../src/Main.cpp
+EXCLUDE                = ../src/app/Main.cpp
 EXCLUDE_PATTERNS       = */external/*
 
 GENERATE_HTML          = NO

@@ -1,8 +1,8 @@
 #ifndef MAPF_BENCHMARK_H
 #define MAPF_BENCHMARK_H
 
-#include "Map.h"
-#include "Scenario.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <chrono>
 #include <string>

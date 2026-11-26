@@ -1,6 +1,6 @@
-#include "Fitness.h"
-#include "DistanceCache.h"
-#include "OnDemandDistance.h"
+#include "algorithms/csp/Fitness.h"
+#include "algorithms/csp/DistanceCache.h"
+#include "algorithms/csp/OnDemandDistance.h"
 
 #include <cmath>
 #include <limits>

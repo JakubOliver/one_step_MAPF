@@ -1,9 +1,9 @@
 #ifndef MAPF_VALIDATOR_H
 #define MAPF_VALIDATOR_H
 
-#include "../AgentPath.h"
-#include "../Map.h"
-#include "../Scenario.h"
+#include "model/AgentPath.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <cstddef>
 #include <optional>

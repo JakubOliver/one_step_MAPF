@@ -7,9 +7,9 @@
 
 #include <vector>
 
-#include "../AgentPath.h"
-#include "../Map.h"
-#include "../Scenario.h"
+#include "model/AgentPath.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 class Algorithm {
 private:

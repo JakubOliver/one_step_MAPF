@@ -2,9 +2,9 @@
 // Created by jakub on 10/12/26.
 //
 
-#include "CSP.h"
+#include "algorithms/csp/CSP.h"
 
-#include "Grouping.h"
+#include "algorithms/csp/Grouping.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>

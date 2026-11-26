@@ -1,14 +1,14 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Exporter.h"
-#include "InputLoader.h"
-#include "util/Arguments.h"
-#include "util/RunAlgorithm.h"
+#include "io/Exporter.h"
+#include "io/InputLoader.h"
+#include "io/Arguments.h"
+#include "app/RunAlgorithm.h"
 #include "validation/Validator.h"
 
 #if MAPF_WITH_VISUALIZER
-#include "../external/mapf-visualizer/src/Visualizer.h"
+#include "Visualizer.h"
 #endif
 
 int main(int argc, char** argv) {
