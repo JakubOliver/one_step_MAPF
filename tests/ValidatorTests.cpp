@@ -249,4 +249,57 @@ TEST(ValidatorTest, RejectsDiagonalMovesAndTeleportation) {
     ));
 }
 
+TEST(ValidatorTest, PartialValidationAcceptsUnfinishedPathsInAnyOrder) {
+    const auto map = makeMap(4, 2);
+    const std::vector<Scenario> scenarios = {
+        makeScenario({0, 0}, {3, 0}), makeScenario({0, 1}, {3, 1})
+    };
+    const std::vector<AgentPath> paths = {
+        makePath({{0, 1}, {1, 1}}), makePath({{0, 0}, {1, 0}})
+    };
+
+    expectValid(Validator::validatePartial(map, scenarios, paths));
+    expectInvalid(Validator::validate(map, scenarios, paths));
+}
+
+TEST(ValidatorTest, PartialValidationRequiresOneNonemptyPathPerStart) {
+    const auto map = makeMap(3, 2);
+    const std::vector<Scenario> scenarios = {
+        makeScenario({0, 0}, {2, 0}), makeScenario({0, 1}, {2, 1})
+    };
+    expectInvalid(Validator::validatePartial(map, scenarios, {makePath({{0, 0}})}));
+    expectInvalid(Validator::validatePartial(map, scenarios, {AgentPath(), makePath({{0, 1}})}));
+    expectInvalid(Validator::validatePartial(
+        map, scenarios, {makePath({{0, 0}}), makePath({{0, 0}})}
+    ));
+}
+
+TEST(ValidatorTest, PartialValidationRejectsInvalidMovesAndCollisions) {
+    const auto map = makeMap(3, 2, {{2, 1}});
+    const std::vector<Scenario> scenarios = {
+        makeScenario({0, 0}, {2, 0}), makeScenario({1, 1}, {0, 1})
+    };
+    const auto check = [&](const std::vector<AgentPath>& paths, const std::string& message) {
+        const auto [valid, error] = Validator::validatePartial(map, scenarios, paths);
+        EXPECT_FALSE(valid);
+        ASSERT_TRUE(error.has_value());
+        EXPECT_NE(error->find(message), std::string::npos) << *error;
+    };
+
+    check({makePath({{0, 0}, {2, 0}}), makePath({{1, 1}})}, "invalid move");
+    check({makePath({{0, 0}}), makePath({{1, 1}, {2, 1}})}, "blocked");
+    check({makePath({{0, 0}, {1, 0}}), makePath({{1, 1}, {1, 0}})}, "collide");
+    check({makePath({{0, 0}, {1, 0}}), makePath({{1, 1}, {1, 1}, {1, 0}})}, "collide");
+
+    const std::vector<Scenario> swap_scenarios = {
+        makeScenario({0, 0}, {2, 0}), makeScenario({1, 0}, {2, 0})
+    };
+    const auto [valid, error] = Validator::validatePartial(
+        map, swap_scenarios, {makePath({{0, 0}, {1, 0}}), makePath({{1, 0}, {0, 0}})}
+    );
+    EXPECT_FALSE(valid);
+    ASSERT_TRUE(error.has_value());
+    EXPECT_NE(error->find("swap"), std::string::npos);
+}
+
 }
