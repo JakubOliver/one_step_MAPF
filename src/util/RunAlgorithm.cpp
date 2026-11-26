@@ -35,8 +35,13 @@ std::vector<AgentPath> runAlgorithm(
     Fitness::FitnessFunction fitness;
     if (distance_name == "manhattan") {
         fitness = Fitness::getFitness(fitness_name);
-    } else if (distance_name == "shortest-path") {
-        fitness = Fitness::getFitness(fitness_name, Fitness::shortestPathDistance(map, scenarios));
+    } else if (distance_name == "shortest-path" || distance_name == "lazy-bfs" ||
+               distance_name == "lazy-astar" || distance_name == "astar" || distance_name == "lazy-jps") {
+        const auto method = distance_name == "shortest-path" ? "bfs" : distance_name;
+        fitness = Fitness::getFitness(
+            fitness_name,
+            Fitness::shortestPathDistance(map, scenarios, method)
+        );
     } else {
         throw std::invalid_argument("Unknown CSP distance: " + distance_name);
     }

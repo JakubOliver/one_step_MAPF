@@ -77,7 +77,9 @@ The penalty's effect depends on the fitness scale.
 Set `--distance shortest-path` to use precomputed distances around static
 obstacles with any fitness; `--distance manhattan` is the default. The
 shortest-path option rejects scenarios whose start cannot reach its goal;
-other agents can still cause deadlocks. The older `--fitness shortest-path`
+other agents can still cause deadlocks. Alternatives `--distance lazy-bfs`,
+`lazy-astar`, and `lazy-jps` compute exact distances on demand; `astar` precomputes
+them using a single h=0 (Dijkstra) traversal per goal. The older `--fitness shortest-path`
 is an alias for linear fitness with shortest-path distance.
 
 ```sh
@@ -88,3 +90,20 @@ is an alias for linear fitness with shortest-path distance.
 Optionally, `--prevent-immediate-return` forbids a return in the next step;
 waiting is allowed, as is returning after a wait. See the
 [approaches documentation](docs/source/approaches.rst) for details.
+
+## Benchmarks
+
+Download the Moving AI data and run from the project root:
+
+```sh
+python3 download_data.py
+cmake --build --preset release --target benchmark
+./out/build/release/benchmark --help
+./out/build/release/benchmark preprocessing bfs benchmarks/maps.txt 10
+./out/build/release/benchmark preprocessing lazy-bfs benchmarks/maps.txt 10
+./out/build/release/benchmark preprocessing lazy-astar benchmarks/maps.txt 10
+./out/build/release/benchmark preprocessing astar benchmarks/maps.txt 10
+./out/build/release/benchmark preprocessing lazy-jps benchmarks/maps.txt 10
+./out/build/release/benchmark algorithm bfs benchmarks/maps.txt 10 30 > bfs.csv
+./out/build/release/benchmark algorithm none benchmarks/maps.txt 10 30 > none.csv
+```
