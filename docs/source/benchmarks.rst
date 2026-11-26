@@ -261,7 +261,7 @@ are from individual runs and should not be treated as current benchmarks.
 
    </details>
 
-Source: `issue comment <https://github.com/JakubOliver/one_step_MAPF/issues/19#issuecomment-7199877474>`_.
+Source: `BFS benchmark results <https://github.com/JakubOliver/one_step_MAPF/issues/19#issuecomment-7199877474>`_.
 
 .. raw:: html
 
@@ -580,6 +580,6 @@ Source: `issue comment <https://github.com/JakubOliver/one_step_MAPF/issues/19#i
 
    </details>
 
-Source: `issue comment <https://github.com/JakubOliver/one_step_MAPF/issues/19#issuecomment-7201438309>`_.
+Source: `Additional benchmark results <https://github.com/JakubOliver/one_step_MAPF/issues/19#issuecomment-7201438309>`_.
 
 
