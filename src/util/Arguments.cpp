@@ -26,7 +26,7 @@ std::optional<Arguments> parseArguments(
         .help("CSP fitness function");
     program.add_argument("--distance")
         .default_value("manhattan")
-        .help("CSP distance: manhattan or shortest-path");
+        .help("CSP distance: manhattan, shortest-path, lazy-bfs, lazy-astar, astar or lazy-jps");
     program.add_argument("--memory-size")
         .default_value(0)
         .scan<'i', int>()

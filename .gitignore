@@ -9,3 +9,6 @@ build
 
 #Project specific
 agents.csv
+
+# Downloaded benchmark data
+/data/

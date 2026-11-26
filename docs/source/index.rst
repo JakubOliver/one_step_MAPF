@@ -19,6 +19,7 @@ paths that can be checked by the validator and exported for visualization.
    architecture
    algorithms
    approaches
+   benchmarks
    development
 
 .. toctree::
