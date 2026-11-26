@@ -83,6 +83,18 @@ std::vector<AgentType> CSP::processGroupTyped(
     const auto& agents = group.agents;
     group_solve_interrupted = false;
 
+    if (std::all_of(agents.begin(), agents.end(), [](const auto& agent) {
+        return agent.isAtGoal();
+    })) {
+        auto waiting_agents = agents;
+        if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
+            for (auto& agent : waiting_agents) {
+                agent.moveTo(agent.position);
+            }
+        }
+        return waiting_agents;
+    }
+
     // Fitness functions consume base Agent values even when agents have memory.
     std::vector<Agent> base_agents;
     if constexpr (!std::is_same_v<AgentType, Agent>) {
