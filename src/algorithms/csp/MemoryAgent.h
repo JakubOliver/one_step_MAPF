@@ -1,7 +1,7 @@
 #ifndef MAPF_MEMORY_AGENT_H
 #define MAPF_MEMORY_AGENT_H
 
-#include "Agent.h"
+#include "model/Agent.h"
 
 #include <algorithm>
 #include <cstddef>

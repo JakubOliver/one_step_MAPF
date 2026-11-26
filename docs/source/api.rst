@@ -8,28 +8,28 @@ public API appear here automatically on the next documentation build.
 Core types
 ----------
 
-.. doxygenfile:: AgentCord.h
+.. doxygenfile:: model/AgentCord.h
    :project: one_step_MAPF
 
-.. doxygenfile:: Agent.h
+.. doxygenfile:: model/Agent.h
    :project: one_step_MAPF
 
-.. doxygenfile:: AgentPath.h
+.. doxygenfile:: model/AgentPath.h
    :project: one_step_MAPF
 
-.. doxygenfile:: Map.h
+.. doxygenfile:: model/Map.h
    :project: one_step_MAPF
 
-.. doxygenfile:: Scenario.h
+.. doxygenfile:: model/Scenario.h
    :project: one_step_MAPF
 
 Input and output
 ----------------
 
-.. doxygenfile:: InputLoader.h
+.. doxygenfile:: io/InputLoader.h
    :project: one_step_MAPF
 
-.. doxygenfile:: Exporter.h
+.. doxygenfile:: io/Exporter.h
    :project: one_step_MAPF
 
 Algorithms
@@ -38,16 +38,16 @@ Algorithms
 .. doxygenfile:: algorithms/Algorithm.h
    :project: one_step_MAPF
 
-.. doxygenfile:: algorithms/CSP.h
+.. doxygenfile:: algorithms/csp/CSP.h
    :project: one_step_MAPF
 
-.. doxygenfile:: algorithms/Fitness.h
+.. doxygenfile:: algorithms/csp/Fitness.h
    :project: one_step_MAPF
 
-.. doxygenfile:: algorithms/Grouping.h
+.. doxygenfile:: algorithms/csp/Grouping.h
    :project: one_step_MAPF
 
-.. doxygenfile:: algorithms/PriorityPlanning.h
+.. doxygenfile:: algorithms/priority_planning/PriorityPlanning.h
    :project: one_step_MAPF
 
 Validation

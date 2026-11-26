@@ -1,6 +1,6 @@
-#include "Validator.h"
+#include "validation/Validator.h"
 
-#include "../Agent.h"
+#include "model/Agent.h"
 
 #include <algorithm>
 #include <map>

@@ -2,7 +2,7 @@
 // Created by jakub on 10/5/26.
 //
 
-#include "InputLoader.h"
+#include "io/InputLoader.h"
 
 #include "csv.hpp"
 #include <fstream>

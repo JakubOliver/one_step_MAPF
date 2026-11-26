@@ -8,8 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "AgentPath.h"
-#include "Scenario.h"
+#include "model/AgentPath.h"
+#include "model/Scenario.h"
 
 constexpr char AGENT_PATH_FILE_NAME[] = "agents.csv";
 

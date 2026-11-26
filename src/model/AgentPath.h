@@ -5,7 +5,7 @@
 #ifndef MAPF_AGENT_PATH_H
 #define MAPF_AGENT_PATH_H
 
-#include "AgentCord.h"
+#include "model/AgentCord.h"
 
 #include <cstddef>
 #include <vector>

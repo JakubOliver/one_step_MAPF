@@ -9,11 +9,11 @@
 #include <functional>
 #include <string>
 
-#include "Fitness.h"
-#include "Grouping.h"
-#include "../Agent.h"
-#include "../MemoryAgent.h"
-#include "Algorithm.h"
+#include "algorithms/csp/Fitness.h"
+#include "algorithms/csp/Grouping.h"
+#include "model/Agent.h"
+#include "algorithms/csp/MemoryAgent.h"
+#include "algorithms/Algorithm.h"
 
 class CSPTest;
 

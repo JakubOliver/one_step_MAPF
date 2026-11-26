@@ -5,7 +5,7 @@
 #ifndef MAPF_MAP_H
 #define MAPF_MAP_H
 
-#include "AgentCord.h"
+#include "model/AgentCord.h"
 
 #include <cstddef>
 #include <iostream>

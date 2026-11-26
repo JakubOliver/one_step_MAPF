@@ -5,8 +5,8 @@
 #ifndef MAPF_INPUTLOADER_H
 #define MAPF_INPUTLOADER_H
 
-#include "Scenario.h"
-#include "Map.h"
+#include "model/Scenario.h"
+#include "model/Map.h"
 
 #include <iostream>
 #include <vector>

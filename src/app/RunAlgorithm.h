@@ -1,10 +1,10 @@
 #ifndef MAPF_RUN_ALGORITHM_H
 #define MAPF_RUN_ALGORITHM_H
 
-#include "Arguments.h"
-#include "../AgentPath.h"
-#include "../Map.h"
-#include "../Scenario.h"
+#include "io/Arguments.h"
+#include "model/AgentPath.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <vector>
 

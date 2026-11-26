@@ -7,8 +7,8 @@
 #include <utility>
 #include <vector>
 
-#include "Agent.h"
-#include "algorithms/Grouping.h"
+#include "model/Agent.h"
+#include "algorithms/csp/Grouping.h"
 
 namespace {
 

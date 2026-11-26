@@ -5,7 +5,7 @@
 #ifndef MAPF_AGENT_H
 #define MAPF_AGENT_H
 
-#include "AgentCord.h"
+#include "model/AgentCord.h"
 
 #include <array>
 #include <atomic>

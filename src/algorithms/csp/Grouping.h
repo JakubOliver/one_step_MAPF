@@ -5,8 +5,8 @@
 #ifndef MAPF_GROUPING_H
 #define MAPF_GROUPING_H
 
-#include "../Agent.h"
-#include "../Map.h"
+#include "model/Agent.h"
+#include "model/Map.h"
 
 #include <map>
 #include <vector>

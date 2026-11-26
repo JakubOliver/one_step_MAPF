@@ -294,7 +294,7 @@ file(
 list(
         REMOVE_ITEM
         MAPF_CORE_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/Main.cpp
+        ${CMAKE_SOURCE_DIR}/src/app/Main.cpp
 )
 
 add_library(
@@ -319,7 +319,7 @@ target_link_libraries(
 
 add_executable(
         MAPF
-        src/Main.cpp
+        src/app/Main.cpp
 )
 
 target_link_libraries(

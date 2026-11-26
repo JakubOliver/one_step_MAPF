@@ -1,9 +1,9 @@
 #ifndef MAPF_FITNESS_H
 #define MAPF_FITNESS_H
 
-#include "../Agent.h"
-#include "../Map.h"
-#include "../Scenario.h"
+#include "model/Agent.h"
+#include "model/Map.h"
+#include "model/Scenario.h"
 
 #include <cstdint>
 #include <functional>

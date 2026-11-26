@@ -2,7 +2,7 @@
 // Created by jakub on 10/30/26.
 //
 
-#include "Agent.h"
+#include "model/Agent.h"
 
 #include <limits>
 #include <optional>

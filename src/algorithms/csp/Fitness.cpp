@@ -1,5 +1,5 @@
-#include "Fitness.h"
-#include "DistanceCache.h"
+#include "algorithms/csp/Fitness.h"
+#include "algorithms/csp/DistanceCache.h"
 
 #include <cmath>
 #include <limits>

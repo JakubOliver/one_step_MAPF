@@ -2,7 +2,7 @@
 // Created by jakub on 10/11/26.
 //
 
-#include "Algorithm.h"
+#include "algorithms/Algorithm.h"
 
 #include <chrono>
 

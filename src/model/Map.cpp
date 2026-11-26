@@ -2,7 +2,7 @@
 // Created by jakub on 10/5/26.
 //
 
-#include "Map.h"
+#include "model/Map.h"
 
 bool Map::isInBounds(std::size_t x, std::size_t y) const {
     return isInBounds({x, y});
