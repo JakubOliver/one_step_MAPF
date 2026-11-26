@@ -379,3 +379,15 @@ if(BUILD_TESTING)
         )
     endif()
 endif()
+
+# ============================================================
+# Benchmarks
+# ============================================================
+
+add_executable(
+        benchmark
+        benchmarks/Benchmark.cpp
+        benchmarks/Preprocessing.cpp
+        benchmarks/Algorithm.cpp
+)
+target_link_libraries(benchmark PRIVATE mapf_core)

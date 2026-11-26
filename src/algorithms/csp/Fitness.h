@@ -43,6 +43,11 @@ using DistanceFunction = std::function<uint64_t(const Agent&)>;
 FitnessFunction getFitness(const std::string& name);
 FitnessFunction getFitness(const std::string& name, DistanceFunction distance);
 DistanceFunction shortestPathDistance(const Map& map, const std::vector<Scenario>& scenarios);
+DistanceFunction shortestPathDistance(
+    const Map& map,
+    const std::vector<Scenario>& scenarios,
+    const std::string& method
+);
 
 } // namespace Fitness
 

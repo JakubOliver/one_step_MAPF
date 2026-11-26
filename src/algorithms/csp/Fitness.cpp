@@ -1,5 +1,6 @@
 #include "algorithms/csp/Fitness.h"
 #include "algorithms/csp/DistanceCache.h"
+#include "algorithms/csp/OnDemandDistance.h"
 
 #include <cmath>
 #include <limits>
@@ -92,6 +93,20 @@ Fitness::DistanceFunction Fitness::shortestPathDistance(
     const std::vector<Scenario>& scenarios
 ) {
     auto distances = std::make_shared<DistanceCache>(map, scenarios);
+    return [distances](const Agent& agent) {
+        return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
+    };
+}
+
+Fitness::DistanceFunction Fitness::shortestPathDistance(
+    const Map& map,
+    const std::vector<Scenario>& scenarios,
+    const std::string& method
+) {
+    if (method == "bfs") {
+        return shortestPathDistance(map, scenarios);
+    }
+    auto distances = std::make_shared<OnDemandDistance>(map, scenarios, method);
     return [distances](const Agent& agent) {
         return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
     };
