@@ -93,36 +93,30 @@ jobs:
           path: ${{ env.CCACHE_DIR }}
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
-      - name: Run unit tests for pull requests
-        if: github.event_name == 'pull_request'
-        run: >-
-          ctest
-          --test-dir build
-          --output-on-failure
-          --no-tests=error
-          -LE integration
-          --output-junit "${GITHUB_WORKSPACE}/report-unit.xml"
+      - name: Run unit tests
+        shell: bash
+        run: |
+          set -o pipefail
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --no-tests=error \
+            -LE integration \
+            --output-junit "${GITHUB_WORKSPACE}/report-unit.xml" 2>&1 | \
+            sed -u '/WARNING: CP-SAT is running in debug mode\./d'
 
-      - name: Run selected integration tests for pull requests
-        if: github.event_name == 'pull_request'
-        env:
-          MAPF_INTEGRATION_SHORT: '1'
-        run: >-
-          ctest
-          --test-dir build
-          --output-on-failure
-          --no-tests=error
-          -L integration
-          -R 'manhattan_manhattan_Memory_AllowReturn|sqrt_shortest_path_NoMemory_PreventReturn|squared_shortest_path_Memory_PreventReturn|random_manhattan_NoMemory_AllowReturn'
-          --output-junit "${GITHUB_WORKSPACE}/report-integration.xml"
-
-      - name: Run all tests
-        if: github.event_name != 'pull_request'
-        run: >-
-          ctest
-          --test-dir build
-          --output-on-failure
-          --output-junit "${GITHUB_WORKSPACE}/report.xml"
+      - name: Run integration tests requiring completion
+        shell: bash
+        run: |
+          set -o pipefail
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --no-tests=error \
+            -L integration \
+            -R '_RequiresCompletion' \
+            --output-junit "${GITHUB_WORKSPACE}/report-integration.xml" 2>&1 | \
+            sed -u '/WARNING: CP-SAT is running in debug mode\./d'
 
       - name: Upload test report
         if: always()

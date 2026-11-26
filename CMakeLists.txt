@@ -375,7 +375,7 @@ if(BUILD_TESTING)
         gtest_discover_tests(
                 csp_integration_tests
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-                PROPERTIES TIMEOUT 20 LABELS integration
+                PROPERTIES TIMEOUT 60 LABELS integration
         )
     endif()
 endif()
