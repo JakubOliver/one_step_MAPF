@@ -108,7 +108,8 @@ INSTANTIATE_TEST_SUITE_P(
             }
         }
         return name + (info.param.memory_size ? "_Memory" : "_NoMemory") +
-            (info.param.prevent_return ? "_PreventReturn" : "_AllowReturn");
+            (info.param.prevent_return ? "_PreventReturn" : "_AllowReturn") +
+            (info.param.require_completion ? "_RequiresCompletion" : "_CompletionOptional");
     }
 );
 

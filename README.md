@@ -23,23 +23,23 @@ ctest --preset release
 ```
 
 The setting is cached; pass `-DMAPF_BUILD_INTEGRATION_TESTS=OFF` when configuring
-to disable them again. To run only the integration tests, use
-`ctest --preset release -L integration`. CI enables them explicitly. Pull
-requests run four representative integration configurations, with a 50-step
-limit for configurations that do not require completion. Runs on `main`,
-scheduled runs, and manually triggered workflows run all configurations with
-the usual 200-step limit. Locally, set `MAPF_INTEGRATION_SHORT=1` to use the
-shorter limit for configurations where completion is optional.
+to disable them again. To run only integration configurations that are expected
+to complete, as CI does, use:
 
 ```sh
-ctest --preset release
+ctest --preset release -L integration -R '_RequiresCompletion'
 ```
 
-or
+To run all integration configurations, including those where completion is
+optional, use:
 
 ```sh
-ctest --preset release
+ctest --preset release -L integration
 ```
+
+Each configuration has a limit of 200 iterations and a 60-second timeout.
+Set `MAPF_INTEGRATION_SHORT=1` to reduce the iteration limit to 50 for
+configurations where completion is optional.
 
 # Documentation
 
