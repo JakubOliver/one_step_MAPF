@@ -75,18 +75,12 @@ int64_t from_pos_to_index(
     );
 }
 
-std::vector<Agent> CSP::processGroup(
-    const std::vector<Agent>& agents,
-    const Map& map
-) {
-    return processGroupTyped(agents, map);
-}
-
 template<typename AgentType, bool PreventImmediateReturn>
 std::vector<AgentType> CSP::processGroupTyped(
-    const std::vector<AgentType>& agents,
+    const Group<AgentType>& group,
     const Map& map
 ) {
+    const auto& agents = group.agents;
     group_solve_interrupted = false;
 
     // Fitness functions consume base Agent values even when agents have memory.
@@ -247,13 +241,11 @@ std::vector<AgentType> CSP::processGroupTyped(
         return std::find(domain.begin(), domain.end(), value) != domain.end();
     };
 
-    for (std::size_t first = 0; first < agents.size(); ++first) {
-        for (std::size_t second = first + 1; second < agents.size(); ++second) {
-            for (const auto value : domains[first]) {
-                if (contains(domains[second], value)) {
-                    parent[root(first)] = root(second);
-                    break;
-                }
+    for (const auto& [first, second] : group.edges) {
+        for (const auto value : domains[first]) {
+            if (contains(domains[second], value)) {
+                parent[root(first)] = root(second);
+                break;
             }
         }
     }
@@ -268,23 +260,21 @@ std::vector<AgentType> CSP::processGroupTyped(
     }
 
     // Prevents two agents from swapping their current positions in one step.
-    for (std::size_t first = 0; first < agents.size(); ++first) {
-        for (std::size_t second = first + 1; second < agents.size(); ++second) {
-            if (!contains(domains[first], from_pos_to_index(agents[second].position, map.width)) ||
-                !contains(domains[second], from_pos_to_index(agents[first].position, map.width))) {
-                continue;
-            }
-            const std::vector<IntVar> pair_vars = {
-                agents_vars[first],
-                agents_vars[second]
-            };
-            auto forbidden_swap = cp_model.AddForbiddenAssignments(pair_vars);
-
-            forbidden_swap.AddTuple({
-                from_pos_to_index(agents[second].position, map.width),
-                from_pos_to_index(agents[first].position, map.width)
-            });
+    for (const auto& [first, second] : group.edges) {
+        if (!contains(domains[first], from_pos_to_index(agents[second].position, map.width)) ||
+            !contains(domains[second], from_pos_to_index(agents[first].position, map.width))) {
+            continue;
         }
+        const std::vector<IntVar> pair_vars = {
+            agents_vars[first],
+            agents_vars[second]
+        };
+        auto forbidden_swap = cp_model.AddForbiddenAssignments(pair_vars);
+
+        forbidden_swap.AddTuple({
+            from_pos_to_index(agents[second].position, map.width),
+            from_pos_to_index(agents[first].position, map.width)
+        });
     }
 
     // Minimize total fitness.
@@ -437,8 +427,8 @@ std::vector<AgentPath> CSP::resolveTyped(
                 break;
             }
 
-            for (std::size_t i = 0; i < group.size(); ++i) {
-                const auto agent_index = agent_indices.at(group[i].position);
+            for (std::size_t i = 0; i < group.agents.size(); ++i) {
+                const auto agent_index = agent_indices.at(group.agents[i].position);
                 const auto& processed_agent = processed_group[i];
 
                 const auto [agent_it, inserted] = updated_agents.emplace(

@@ -10,6 +10,7 @@
 #include <string>
 
 #include "Fitness.h"
+#include "Grouping.h"
 #include "../Agent.h"
 #include "../MemoryAgent.h"
 #include "Algorithm.h"
@@ -57,14 +58,9 @@ private:
         const std::vector<Scenario>& scenarios
     ) override;
 
-    std::vector<Agent> processGroup(
-        const std::vector<Agent>& agents,
-        const Map& map
-    );
-
     template<typename AgentType, bool PreventImmediateReturn = false>
     std::vector<AgentType> processGroupTyped(
-        const std::vector<AgentType>& agents,
+        const Group<AgentType>& group,
         const Map& map
     );
 

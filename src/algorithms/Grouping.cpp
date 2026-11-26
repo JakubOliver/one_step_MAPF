@@ -64,11 +64,11 @@ bool canShareDestination(const Agent& first, const Agent& second, const Map& map
 }
 
 template<typename AgentType>
-std::vector<std::vector<AgentType>> getGroupsImpl(
+std::vector<Group<AgentType>> getGroupsImpl(
     const std::map<AgentCord, AgentType>& agents,
     const Map* map
 ) {
-    std::vector<std::vector<AgentType>> groups;
+    std::vector<Group<AgentType>> groups;
     std::set<AgentCord> visited;
 
     for (const auto& agent_entry : agents) {
@@ -79,25 +79,36 @@ std::vector<std::vector<AgentType>> getGroupsImpl(
         }
 
         auto& group = groups.emplace_back();
+        std::map<AgentCord, std::size_t> indices;
         std::queue<AgentCord> pending;
         pending.push(pos);
         visited.insert(pos);
+        indices.emplace(pos, group.agents.size());
+        group.agents.push_back(agent_entry.second);
 
         while (!pending.empty()) {
             const auto current_position = pending.front();
             pending.pop();
 
             const auto& current_agent = agents.at(current_position);
-            group.push_back(current_agent);
-
             for (const auto& neighbor : current_agent.getNeighbors()) {
-                if (
-                    agents.contains(neighbor) &&
-                    !visited.contains(neighbor) &&
-                    (!map || canShareDestination(current_agent, agents.at(neighbor), *map))
-                ) {
+                const auto neighbor_it = agents.find(neighbor);
+                if (neighbor_it == agents.end() ||
+                    (map && !canShareDestination(current_agent, neighbor_it->second, *map))) {
+                    continue;
+                }
+
+                if (!visited.contains(neighbor)) {
                     visited.insert(neighbor);
                     pending.push(neighbor);
+                    indices.emplace(neighbor, group.agents.size());
+                    group.agents.push_back(neighbor_it->second);
+                }
+
+                const auto first = indices.at(current_position);
+                const auto second = indices.at(neighbor);
+                if (first < second) {
+                    group.edges.emplace_back(first, second);
                 }
             }
         }
@@ -107,29 +118,29 @@ std::vector<std::vector<AgentType>> getGroupsImpl(
 }
 
 template<typename AgentType>
-std::vector<std::vector<AgentType>> Grouping::getGroups(
+std::vector<Group<AgentType>> Grouping::getGroups(
     const std::map<AgentCord, AgentType>& agents
 ) {
     return getGroupsImpl(agents, nullptr);
 }
 
 template<typename AgentType>
-std::vector<std::vector<AgentType>> Grouping::getGroups(
+std::vector<Group<AgentType>> Grouping::getGroups(
     const std::map<AgentCord, AgentType>& agents,
     const Map& map
 ) {
     return getGroupsImpl(agents, &map);
 }
 
-template std::vector<std::vector<Agent>> Grouping::getGroups(
+template std::vector<Group<Agent>> Grouping::getGroups(
     const std::map<AgentCord, Agent>& agents
 );
-template std::vector<std::vector<MemoryAgent>> Grouping::getGroups(
+template std::vector<Group<MemoryAgent>> Grouping::getGroups(
     const std::map<AgentCord, MemoryAgent>& agents
 );
-template std::vector<std::vector<Agent>> Grouping::getGroups(
+template std::vector<Group<Agent>> Grouping::getGroups(
     const std::map<AgentCord, Agent>& agents, const Map& map
 );
-template std::vector<std::vector<MemoryAgent>> Grouping::getGroups(
+template std::vector<Group<MemoryAgent>> Grouping::getGroups(
     const std::map<AgentCord, MemoryAgent>& agents, const Map& map
 );
