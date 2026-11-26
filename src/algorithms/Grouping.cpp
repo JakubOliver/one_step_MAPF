@@ -5,12 +5,19 @@
 #include "Grouping.h"
 #include "../MemoryAgent.h"
 
+#include <algorithm>
 #include <queue>
 #include <set>
 
 namespace {
 
-bool canShareDestination(const Agent& first, const Agent& second, const Map& map) {
+// Checking every reachable position is unnecessary: only shared intermediate
+// positions can connect non-adjacent agents.
+[[maybe_unused]] bool canShareDestination_slower(
+    const Agent& first,
+    const Agent& second,
+    const Map& map
+) {
     std::set<AgentCord> destinations;
     destinations.insert(first.position);
     for (const auto& position : first.getMoveTo()) {
@@ -27,6 +34,29 @@ bool canShareDestination(const Agent& first, const Agent& second, const Map& map
             destinations.contains(position)) {
             return true;
         }
+    }
+    return false;
+}
+
+bool canShareDestination(const Agent& first, const Agent& second, const Map& map) {
+    const auto [x1, y1] = first.position;
+    const auto [x2, y2] = second.position;
+    const auto dx = x1 > x2 ? x1 - x2 : x2 - x1;
+    const auto dy = y1 > y2 ? y1 - y2 : y2 - y1;
+
+    // Adjacent agents can move into each other's current positions.
+    if ((dx == 1 && dy == 0) || (dx == 0 && dy == 1)) {
+        return true;
+    }
+
+    if (dx == 1 && dy == 1) {
+        return !map.isBlocked({x1, y2}) || !map.isBlocked({x2, y1});
+    }
+    if (dx == 2 && dy == 0) {
+        return !map.isBlocked({std::min(x1, x2) + 1, y1});
+    }
+    if (dx == 0 && dy == 2) {
+        return !map.isBlocked({x1, std::min(y1, y2) + 1});
     }
     return false;
 }
