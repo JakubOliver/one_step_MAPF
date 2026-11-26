@@ -22,7 +22,24 @@ std::pair<bool, std::optional<std::string>> Validator::validate(
     const std::vector<Scenario>& scenarios,
     const std::vector<AgentPath>& paths
 ) {
-    if (auto error = pathsMatchScenarios(scenarios, paths)) {
+    return validatePaths(map, scenarios, paths, true);
+}
+
+std::pair<bool, std::optional<std::string>> Validator::validatePartial(
+    const Map& map,
+    const std::vector<Scenario>& scenarios,
+    const std::vector<AgentPath>& paths
+) {
+    return validatePaths(map, scenarios, paths, false);
+}
+
+std::pair<bool, std::optional<std::string>> Validator::validatePaths(
+    const Map& map,
+    const std::vector<Scenario>& scenarios,
+    const std::vector<AgentPath>& paths,
+    bool require_goal
+) {
+    if (auto error = pathsMatchScenarios(scenarios, paths, require_goal)) {
         return {false, std::move(error)};
     }
     if (auto error = pathsUseValidPositions(map, paths)) {
@@ -43,11 +60,32 @@ std::pair<bool, std::optional<std::string>> Validator::validate(
 
 std::optional<std::string> Validator::pathsMatchScenarios(
     const std::vector<Scenario>& scenarios,
-    const std::vector<AgentPath>& paths
+    const std::vector<AgentPath>& paths,
+    bool require_goal
 ) {
     if (scenarios.size() != paths.size()) {
         return "Expected " + std::to_string(scenarios.size())
             + " paths, but received " + std::to_string(paths.size());
+    }
+
+    if (!require_goal) {
+        std::map<AgentCord, std::size_t> unmatchedStarts;
+        for (const auto& scenario : scenarios) {
+            ++unmatchedStarts[{scenario.startX, scenario.startY}];
+        }
+        for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
+            const auto& path = paths[pathIndex].getPath();
+            if (path.empty()) {
+                return "Path " + std::to_string(pathIndex) + " is empty";
+            }
+            const auto start = unmatchedStarts.find(path.front());
+            if (start == unmatchedStarts.end() || start->second == 0) {
+                return "Path " + std::to_string(pathIndex) + " starts at "
+                    + formatPosition(path.front()) + " without an unmatched scenario";
+            }
+            --start->second;
+        }
+        return std::nullopt;
     }
 
     using PathEndpoints = std::pair<AgentCord, AgentCord>;

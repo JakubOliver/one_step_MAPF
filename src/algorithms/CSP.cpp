@@ -75,18 +75,12 @@ int64_t from_pos_to_index(
     );
 }
 
-std::vector<Agent> CSP::processGroup(
-    const std::vector<Agent>& agents,
-    const Map& map
-) {
-    return processGroupTyped(agents, map);
-}
-
 template<typename AgentType, bool PreventImmediateReturn>
 std::vector<AgentType> CSP::processGroupTyped(
-    const std::vector<AgentType>& agents,
+    const Group<AgentType>& group,
     const Map& map
 ) {
+    const auto& agents = group.agents;
     group_solve_interrupted = false;
 
     // Fitness functions consume base Agent values even when agents have memory.
@@ -168,6 +162,8 @@ std::vector<AgentType> CSP::processGroupTyped(
 
     std::vector<IntVar> agents_vars;
     agents_vars.reserve(agents.size());
+    std::vector<std::vector<int64_t>> domains;
+    domains.reserve(agents.size());
 
     LinearExpr objective;
 
@@ -207,6 +203,7 @@ std::vector<AgentType> CSP::processGroupTyped(
         );
 
         agents_vars.push_back(next_position);
+        domains.push_back(Q_pos);
 
         // Candidate selection index
         IntVar choice = cp_model.NewIntVar(
@@ -229,23 +226,55 @@ std::vector<AgentType> CSP::processGroupTyped(
         objective += cost;
     }
 
-    // Enforces No vertex collisions
-    cp_model.AddAllDifferent(agents_vars);
+    // Connected components of overlapping domains can be constrained independently.
+    std::vector<std::size_t> parent(agents.size());
+    for (std::size_t i = 0; i < parent.size(); ++i) {
+        parent[i] = i;
+    }
+    auto root = [&](std::size_t i) {
+        while (parent[i] != i) {
+            i = parent[i];
+        }
+        return i;
+    };
+    auto contains = [](const std::vector<int64_t>& domain, int64_t value) {
+        return std::find(domain.begin(), domain.end(), value) != domain.end();
+    };
+
+    for (const auto& [first, second] : group.edges) {
+        for (const auto value : domains[first]) {
+            if (contains(domains[second], value)) {
+                parent[root(first)] = root(second);
+                break;
+            }
+        }
+    }
+    std::vector<std::vector<IntVar>> components(agents.size());
+    for (std::size_t i = 0; i < agents.size(); ++i) {
+        components[root(i)].push_back(agents_vars[i]);
+    }
+    for (const auto& component : components) {
+        if (component.size() > 1) {
+            cp_model.AddAllDifferent(component);
+        }
+    }
 
     // Prevents two agents from swapping their current positions in one step.
-    for (std::size_t first = 0; first < agents.size(); ++first) {
-        for (std::size_t second = first + 1; second < agents.size(); ++second) {
-            const std::vector<IntVar> pair_vars = {
-                agents_vars[first],
-                agents_vars[second]
-            };
-            auto forbidden_swap = cp_model.AddForbiddenAssignments(pair_vars);
-
-            forbidden_swap.AddTuple({
-                from_pos_to_index(agents[second].position, map.width),
-                from_pos_to_index(agents[first].position, map.width)
-            });
+    for (const auto& [first, second] : group.edges) {
+        if (!contains(domains[first], from_pos_to_index(agents[second].position, map.width)) ||
+            !contains(domains[second], from_pos_to_index(agents[first].position, map.width))) {
+            continue;
         }
+        const std::vector<IntVar> pair_vars = {
+            agents_vars[first],
+            agents_vars[second]
+        };
+        auto forbidden_swap = cp_model.AddForbiddenAssignments(pair_vars);
+
+        forbidden_swap.AddTuple({
+            from_pos_to_index(agents[second].position, map.width),
+            from_pos_to_index(agents[first].position, map.width)
+        });
     }
 
     // Minimize total fitness.
@@ -382,7 +411,7 @@ std::vector<AgentPath> CSP::resolveTyped(
             break;
         }
 
-        const auto groups = grouping.getGroups(agents);
+        const auto groups = grouping.getGroups(agents, map);
         std::map<AgentCord, AgentType> updated_agents;
         std::map<AgentCord, std::size_t> updated_agent_indices;
         bool iteration_interrupted = false;
@@ -398,22 +427,15 @@ std::vector<AgentPath> CSP::resolveTyped(
                 break;
             }
 
-            for (std::size_t i = 0; i < group.size(); ++i) {
-                const auto agent_index = agent_indices.at(
-                    group[i].position
-                );
+            for (std::size_t i = 0; i < group.agents.size(); ++i) {
+                const auto agent_index = agent_indices.at(group.agents[i].position);
                 const auto& processed_agent = processed_group[i];
-
 
                 const auto [agent_it, inserted] = updated_agents.emplace(
                     processed_agent.position,
                     processed_agent
                 );
-
-                updated_agent_indices.emplace(
-                    agent_it->first,
-                    agent_index
-                );
+                updated_agent_indices.emplace(agent_it->first, agent_index);
             }
         }
 

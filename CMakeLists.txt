@@ -57,6 +57,7 @@ endif()
 # ============================================================
 
 if(BUILD_TESTING)
+    option(MAPF_BUILD_INTEGRATION_TESTS "Build and run integration tests" OFF)
     FetchContent_Declare(
             googletest
             GIT_REPOSITORY https://github.com/google/googletest.git
@@ -350,6 +351,7 @@ if(BUILD_TESTING)
             CONFIGURE_DEPENDS
             tests/*.cpp
     )
+    list(REMOVE_ITEM TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/CSPIntegrationTests.cpp")
 
     add_executable(
             mapf_tests
@@ -365,4 +367,15 @@ if(BUILD_TESTING)
 
     include(GoogleTest)
     gtest_discover_tests(mapf_tests)
+
+    if(MAPF_BUILD_INTEGRATION_TESTS)
+        file(COPY tests/fixtures/csp DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures")
+        add_executable(csp_integration_tests tests/CSPIntegrationTests.cpp)
+        target_link_libraries(csp_integration_tests PRIVATE mapf_core GTest::gtest_main)
+        gtest_discover_tests(
+                csp_integration_tests
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                PROPERTIES TIMEOUT 20 LABELS integration
+        )
+    endif()
 endif()

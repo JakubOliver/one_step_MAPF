@@ -76,6 +76,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DMAPF_BUILD_VISUALIZER=OFF \
+            -DMAPF_BUILD_INTEGRATION_TESTS=ON \
             -DBUILD_TESTING=ON
 
       - name: Build
@@ -92,7 +93,31 @@ jobs:
           path: ${{ env.CCACHE_DIR }}
           key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
 
-      - name: Run tests
+      - name: Run unit tests for pull requests
+        if: github.event_name == 'pull_request'
+        run: >-
+          ctest
+          --test-dir build
+          --output-on-failure
+          --no-tests=error
+          -LE integration
+          --output-junit "${GITHUB_WORKSPACE}/report-unit.xml"
+
+      - name: Run selected integration tests for pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          MAPF_INTEGRATION_SHORT: '1'
+        run: >-
+          ctest
+          --test-dir build
+          --output-on-failure
+          --no-tests=error
+          -L integration
+          -R 'manhattan_manhattan_Memory_AllowReturn|sqrt_shortest_path_NoMemory_PreventReturn|squared_shortest_path_Memory_PreventReturn|random_manhattan_NoMemory_AllowReturn'
+          --output-junit "${GITHUB_WORKSPACE}/report-integration.xml"
+
+      - name: Run all tests
+        if: github.event_name != 'pull_request'
         run: >-
           ctest
           --test-dir build
@@ -104,6 +129,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ctest-report
-          path: report.xml
+          path: report*.xml
           retention-days: 45
           if-no-files-found: warn

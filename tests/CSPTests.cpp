@@ -12,12 +12,23 @@
 
 class CSPTest : public ::testing::Test {
 protected:
+    template<typename AgentType>
+    static Group<AgentType> completeGroup(const std::vector<AgentType>& agents) {
+        Group<AgentType> group{.agents = agents};
+        for (std::size_t first = 0; first < agents.size(); ++first) {
+            for (std::size_t second = first + 1; second < agents.size(); ++second) {
+                group.edges.emplace_back(first, second);
+            }
+        }
+        return group;
+    }
+
     static std::vector<MemoryAgent> processMemoryGroup(
         CSP& csp,
         const std::vector<MemoryAgent>& agents,
         const Map& map
     ) {
-        return csp.processGroupTyped(agents, map);
+        return csp.processGroupTyped(completeGroup(agents), map);
     }
 
     static std::vector<MemoryAgent> processWithoutImmediateReturn(
@@ -25,7 +36,7 @@ protected:
         const std::vector<MemoryAgent>& agents,
         const Map& map
     ) {
-        return csp.processGroupTyped<MemoryAgent, true>(agents, map);
+        return csp.processGroupTyped<MemoryAgent, true>(completeGroup(agents), map);
     }
 
     static std::vector<Agent> processGroup(
@@ -33,7 +44,7 @@ protected:
         const std::vector<Agent>& agents,
         const Map& map
     ) {
-        return csp.processGroup(agents, map);
+        return csp.processGroupTyped(completeGroup(agents), map);
     }
 
     static Agent getAgentById(const std::vector<Agent>& agents, AgentId id) {
@@ -375,6 +386,76 @@ TEST_F(CSPTest, ReturnsPartialPathsWhenInterruptedBetweenIterations) {
     EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(1, 0));
 }
 
+TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
+    const Map map{.type = "test", .height = 1, .width = 3,
+        .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}};
+    const std::vector<Scenario> scenarios = {
+        {.startX = 0, .startY = 0, .goalX = 2, .goalY = 0},
+        {.startX = 2, .startY = 0, .goalX = 0, .goalY = 0}
+    };
+    std::size_t evaluations = 0;
+    std::size_t checks = 0;
+    CSP csp(
+        [&evaluations](const Map&, const std::vector<Agent>& group, const Agent&, bool) {
+            EXPECT_EQ(group.size(), 1);
+            ++evaluations;
+            return int64_t{0};
+        },
+        [&checks] { return checks++ > 0; }
+    );
+
+    const auto paths = csp.resolve(map, scenarios);
+    ASSERT_EQ(paths.size(), 2);
+    EXPECT_EQ(evaluations, 2);
+    EXPECT_EQ(paths[0].getPathAtTime(1), AgentCord(0, 0));
+    EXPECT_EQ(paths[1].getPathAtTime(1), AgentCord(2, 0));
+}
+
+TEST_F(CSPTest, ChainedDomainOverlapsPreventVertexCollisions) {
+    const Map map{.type = "test", .height = 1, .width = 5,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
+                {{3, 0}, false}, {{4, 0}, false}}};
+    const std::vector<Agent> agents = {
+        {{0, 0}, {1, 0}}, {{2, 0}, {1, 0}}, {{4, 0}, {3, 0}}
+    };
+    CSP csp;
+    const auto result = processGroup(csp, agents, map);
+
+    ASSERT_EQ(result.size(), 3);
+    EXPECT_NE(result[0].position, result[1].position);
+    EXPECT_NE(result[1].position, result[2].position);
+    EXPECT_NE(result[0].position, result[2].position);
+}
+
+TEST_F(CSPTest, IndependentDomainsCanMoveAtTheSameTime) {
+    const Map map{.type = "test", .height = 1, .width = 5,
+        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true},
+                {{3, 0}, false}, {{4, 0}, false}}};
+    const std::vector<Agent> agents = {
+        {{0, 0}, {1, 0}}, {{4, 0}, {3, 0}}
+    };
+    CSP csp;
+    const auto result = processGroup(csp, agents, map);
+
+    ASSERT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0].position, AgentCord(1, 0));
+    EXPECT_EQ(result[1].position, AgentCord(3, 0));
+}
+
+TEST_F(CSPTest, ReturnRestrictionStillPreventsCollisionWithNeighbor) {
+    const Map map{.type = "test", .height = 1, .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}};
+    MemoryAgent first({0, 0}, {0, 0}, 0);
+    first.moveTo({1, 0});
+    MemoryAgent second({0, 0}, {1, 0}, 0);
+    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {0, 0, true});
+
+    const auto result = processWithoutImmediateReturn(csp, {first, second}, map);
+    ASSERT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0].position, AgentCord(1, 0));
+    EXPECT_EQ(result[1].position, AgentCord(0, 0));
+}
+
 TEST(MemoryAgentTest, RemembersOnlyRecentDeparturesAndIgnoresWaiting) {
     MemoryAgent agent({0, 0}, {3, 0}, 2);
     agent.moveTo({1, 0});
@@ -397,8 +478,8 @@ TEST(MemoryAgentTest, GroupingPreservesMemory) {
 
     const auto groups = Grouping().getGroups(agents);
     ASSERT_EQ(groups.size(), 1);
-    ASSERT_EQ(groups[0].size(), 1);
-    EXPECT_TRUE(groups[0][0].remembers({0, 0}));
+    ASSERT_EQ(groups[0].agents.size(), 1);
+    EXPECT_TRUE(groups[0].agents[0].remembers({0, 0}));
 }
 
 TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {

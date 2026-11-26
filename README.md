@@ -14,6 +14,23 @@ minutes. The build is written to `out/build/release`.
 
 The test suite uses GoogleTest and is run through CTest.
 
+Integration tests are disabled by default. To include them locally, run:
+
+```sh
+cmake --preset release -DMAPF_BUILD_INTEGRATION_TESTS=ON
+cmake --build --preset release
+ctest --preset release
+```
+
+The setting is cached; pass `-DMAPF_BUILD_INTEGRATION_TESTS=OFF` when configuring
+to disable them again. To run only the integration tests, use
+`ctest --preset release -L integration`. CI enables them explicitly. Pull
+requests run four representative integration configurations, with a 50-step
+limit for configurations that do not require completion. Runs on `main`,
+scheduled runs, and manually triggered workflows run all configurations with
+the usual 200-step limit. Locally, set `MAPF_INTEGRATION_SHORT=1` to use the
+shorter limit for configurations where completion is optional.
+
 ```sh
 ctest --preset release
 ```
