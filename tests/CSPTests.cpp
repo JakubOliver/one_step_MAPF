@@ -224,6 +224,54 @@ TEST_F(CSPTest, SingleAgentEvaluatesOnlyValidCandidatesAndUsesFitness) {
     EXPECT_EQ(evaluated[1], std::make_pair(AgentCord(0, 1), false));
 }
 
+TEST_F(CSPTest, AgentsAtGoalsWaitWithoutEvaluatingFitness) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    const std::vector<Agent> agents = {{{0, 0}, {0, 0}}, {{1, 0}, {1, 0}}};
+    int evaluations = 0;
+    CSP csp(
+        [&evaluations](const Map&, const std::vector<Agent>&, const Agent&, bool) {
+            ++evaluations;
+            return int64_t{0};
+        },
+        [] { return false; }
+    );
+
+    for (const auto& group : {std::vector<Agent>{agents[0]}, agents}) {
+        const auto result = processGroup(csp, group, map);
+        ASSERT_EQ(result.size(), group.size());
+        for (std::size_t i = 0; i < group.size(); ++i) {
+            EXPECT_EQ(result[i].position, group[i].position);
+            EXPECT_EQ(result[i].id, group[i].id);
+        }
+    }
+    EXPECT_EQ(evaluations, 0);
+}
+
+TEST_F(CSPTest, GoalWaitUpdatesImmediateReturnAndPreservesMemory) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    MemoryAgent agent({0, 0}, {1, 0}, 2);
+    agent.moveTo({1, 0});
+    ASSERT_TRUE(agent.isImmediateReturn({0, 0}));
+    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {2, 1, true});
+
+    const auto result = processWithoutImmediateReturn(csp, {agent}, map);
+
+    ASSERT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].position, AgentCord(1, 0));
+    EXPECT_FALSE(result[0].isImmediateReturn({0, 0}));
+    EXPECT_TRUE(result[0].remembers({0, 0}));
+}
+
 TEST_F(CSPTest, SingleAgentCanPreferStaying) {
     const Map map{
         .type = "test",
