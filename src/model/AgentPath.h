@@ -24,5 +24,4 @@ public:
     AgentCord getPathAtTime(std::size_t time) const;
 };
 
-
 #endif //MAPF_AGENT_PATH_H

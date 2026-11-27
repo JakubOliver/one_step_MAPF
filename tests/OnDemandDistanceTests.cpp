@@ -8,7 +8,8 @@
 
 struct OnDemandDistanceTestAccess {
     static int64_t cached(const OnDemandDistance& distance, AgentCord position, AgentCord goal) {
-        return distance.fields.at(goal).distances.at(position.second * distance.map.width + position.first);
+        return distance.fields.at(goal).distances.at(position.second * distance.map.width +
+            position.first);
     }
 };
 
@@ -31,7 +32,8 @@ void compareMap(const Map& map) {
             if (map.isBlocked(goal)) {
                 continue;
             }
-            const std::vector<Scenario> scenarios = {{.startX = x, .startY = y, .goalX = x, .goalY = y}};
+            const std::vector<Scenario> scenarios = {{.startX = x, .startY = y, .goalX = x,
+                .goalY = y}};
             const DistanceCache expected(map, scenarios);
             for (const auto* method : {"lazy-bfs", "lazy-astar", "astar", "lazy-jps"}) {
                 OnDemandDistance actual(map, scenarios, method);
@@ -39,7 +41,7 @@ void compareMap(const Map& map) {
                     for (std::size_t sx = 0; sx < map.width; ++sx) {
                         const AgentCord start{sx, sy};
                         SCOPED_TRACE(::testing::Message() << method << " from " << sx << "," << sy
-                                     << " to " << x << "," << y);
+                                                          << " to " << x << "," << y);
                         int64_t distance = -1;
                         try {
                             distance = expected.distance(start, goal);
@@ -86,8 +88,10 @@ TEST(OnDemandDistanceTest, MatchesBfsOnLargerRandomMaps) {
 TEST(OnDemandDistanceTest, RejectsUnreachableStartsAndInvalidQueries) {
     const auto map = makeMap(3, 1, {false, true, false});
     for (const auto* method : {"lazy-bfs", "lazy-astar", "astar", "lazy-jps"}) {
-        EXPECT_THROW((OnDemandDistance(map, {{.startX = 0, .goalX = 2}}, method)), std::invalid_argument);
-        EXPECT_THROW((OnDemandDistance(map, {{.startX = 0, .goalX = 1}}, method)), std::invalid_argument);
+        EXPECT_THROW((OnDemandDistance(map, {{.startX = 0, .goalX = 2}}, method)),
+            std::invalid_argument);
+        EXPECT_THROW((OnDemandDistance(map, {{.startX = 0, .goalX = 1}}, method)),
+            std::invalid_argument);
         OnDemandDistance cache(map, {{.startX = 0, .goalX = 0}}, method);
         EXPECT_THROW(cache.distance({3, 0}, {0, 0}), std::invalid_argument);
         EXPECT_THROW(cache.distance({1, 0}, {0, 0}), std::invalid_argument);

@@ -40,7 +40,7 @@ CSP::CSP(
     std::function<bool()> interruption_requested
 )
     : interruption_requested(std::move(interruption_requested)),
-      fitness(std::move(fitness)) {
+    fitness(std::move(fitness)) {
     if (!this->fitness) {
         throw std::invalid_argument(
             "CSP fitness function must be provided"
@@ -84,8 +84,8 @@ std::vector<AgentType> CSP::processGroupTyped(
     group_solve_interrupted = false;
 
     if (std::all_of(agents.begin(), agents.end(), [](const auto& agent) {
-        return agent.isAtGoal();
-    })) {
+            return agent.isAtGoal();
+        })) {
         auto waiting_agents = agents;
         if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
             for (auto& agent : waiting_agents) {
@@ -201,7 +201,7 @@ std::vector<AgentType> CSP::processGroupTyped(
             costs.push_back(candidate_cost(agent, pos, is_staying));
         };
 
-        add_candidate(agent.position, true); 
+        add_candidate(agent.position, true);
         //TODO: test whether only agent.position==agent.goal does not make more sense
         // because that whould make penalizating staying only at final position
 
@@ -293,11 +293,11 @@ std::vector<AgentType> CSP::processGroupTyped(
     cp_model.Minimize(objective);
 
     // NOTE: To generate one solution for successively worse fitness value,
-    // solve repeatedly and add objective >= previous_objective + 1. 
-    // Butt skips over solutions with same fitness, so TODO for me to check 
+    // solve repeatedly and add objective >= previous_objective + 1.
+    // Butt skips over solutions with same fitness, so TODO for me to check
     // how close the fitness are and if it makeses sense to skipp etc.
-    // For note better sollution sould be to desable found solution and 
-    // run the solver again, but this introduces overhead etc. 
+    // For note better sollution sould be to desable found solution and
+    // run the solver again, but this introduces overhead etc.
 
     SatParameters parameters;
     parameters.set_catch_sigint_signal(false);
@@ -339,16 +339,16 @@ std::vector<AgentType> CSP::processGroupTyped(
         }
 
         /*
-        std::cout << "Agent " << i
+           std::cout << "Agent " << i
                   << ": (" << x << ", " << y << ")\n";
-        */
+         */
     }
 
     /*
-    std::cout << "Total fitness: "
+       std::cout << "Total fitness: "
               << response.objective_value()
               << '\n';
-    */
+     */
 
     return updated_agents;
 }
@@ -394,7 +394,7 @@ std::vector<AgentPath> CSP::resolveTyped(
     }
 
     Grouping grouping;
-    std::set<std::vector<AgentCord>> visited_configurations; //TODO: implement memory, but glboal memory does not make sense (probably) it is too costly, so maybe just some fix size local memory 
+    std::set<std::vector<AgentCord>> visited_configurations; //TODO: implement memory, but glboal memory does not make sense (probably) it is too costly, so maybe just some fix size local memory
 
     auto get_configuration = [&]() {
         std::vector<AgentCord> configuration(scenarios.size());

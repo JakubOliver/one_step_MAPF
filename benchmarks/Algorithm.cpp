@@ -23,8 +23,11 @@ protected:
 
 class SuppressOutput {
 public:
-    SuppressOutput() : original(std::cout.rdbuf(&buffer)) {}
-    ~SuppressOutput() { std::cout.rdbuf(original); }
+    SuppressOutput() : original(std::cout.rdbuf(&buffer)) {
+    }
+    ~SuppressOutput() {
+        std::cout.rdbuf(original);
+    }
 
 private:
     NullBuffer buffer;

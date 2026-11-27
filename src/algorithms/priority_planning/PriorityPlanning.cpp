@@ -165,7 +165,7 @@ AgentPath PriorityPlanning::AStar(const Map& map, const Scenario& scenario) cons
         .estimatedCost = heuristic(
             {start.x, start.y},
             goal
-        ),
+            ),
         .sequence = sequence++
     });
 
@@ -284,7 +284,7 @@ bool PriorityPlanning::hasVertexConflict(
 
     const auto finalPosition = finalPositions.find({x, y});
     return finalPosition != finalPositions.end()
-        && finalPosition->second <= time;
+           && finalPosition->second <= time;
 }
 
 bool PriorityPlanning::hasTransitionConflict(
@@ -302,8 +302,8 @@ bool PriorityPlanning::hasTransitionConflict(
     const auto reservedState = states.find(reverseDestination);
 
     return reservedState != states.end()
-        && reservedState->previousX == to.first
-        && reservedState->previousY == to.second;
+           && reservedState->previousX == to.first
+           && reservedState->previousY == to.second;
 }
 
 bool PriorityPlanning::canOccupyGoalFrom(

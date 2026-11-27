@@ -6,7 +6,7 @@
 
 #include <chrono>
 
-std::vector<AgentPath> Algorithm::resolve(const Map &map, const std::vector<Scenario> &scenarios) {
+std::vector<AgentPath> Algorithm::resolve(const Map& map, const std::vector<Scenario>& scenarios) {
     auto start = std::chrono::steady_clock::now();
 
     std::vector<AgentPath> agents = resolve_(map, scenarios);

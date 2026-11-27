@@ -45,9 +45,12 @@ TEST(DistanceCacheTest, RejectsInvalidGoalsAndUnreachableStarts) {
         .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}
     };
 
-    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 2, .goalY = 0}})), std::invalid_argument);
-    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 1, .goalY = 0}})), std::invalid_argument);
-    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 3, .goalY = 0}})), std::invalid_argument);
+    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 2, .goalY = 0}})),
+        std::invalid_argument);
+    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 1, .goalY = 0}})),
+        std::invalid_argument);
+    EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 3, .goalY = 0}})),
+        std::invalid_argument);
 }
 
 TEST(DistanceCacheTest, ShortestPathFitnessGuidesAgentAroundObstacle) {
@@ -59,7 +62,9 @@ TEST(DistanceCacheTest, ShortestPathFitnessGuidesAgentAroundObstacle) {
     EXPECT_EQ(fitness(map, {}, Agent({0, 0}, {2, 0}), true), 9);
     EXPECT_EQ(fitness(map, {}, Agent({0, 1}, {2, 0}), false), 6);
 
-    CSP csp(fitness, [] { return false; });
+    CSP csp(fitness, [] {
+                return false;
+            });
     const auto paths = csp.resolve(map, scenarios);
     ASSERT_EQ(paths.size(), 1);
     ASSERT_EQ(paths[0].getLength(), 5);
@@ -83,9 +88,9 @@ TEST(DistanceCacheTest, ShortestPathDistanceWorksWithAllFitnessFunctions) {
 
     int calls = 0;
     auto random = Fitness::getFitness("random", [&calls](const Agent&) -> uint64_t {
-        ++calls;
-        return 4;
-    });
+            ++calls;
+            return 4;
+        });
     random(map, {}, agent, false);
     EXPECT_EQ(calls, 1);
 }

@@ -56,14 +56,20 @@ protected:
         throw std::runtime_error("Agent with the specified ID not found");
     }
 
-    static void validateMovement(CSP& csp, const Map& map, std::vector<Agent>& agents, std::vector<std::vector<AgentCord>>& expectedPath){
+    static void validateMovement(
+        CSP& csp,
+        const Map& map,
+        std::vector<Agent>& agents,
+        std::vector<std::vector<AgentCord>>& expectedPath
+    ){
         for (std::size_t i = 0; i < expectedPath.size(); ++i) {
             auto agentsAfterRound = processGroup(csp, agents, map);
 
             for (std::size_t angetId = 0; angetId < agents.size(); ++angetId) {
                 auto agent = getAgentById(agentsAfterRound, angetId);
 
-                EXPECT_EQ(agent.position, expectedPath[i][angetId]) << "agent " << angetId << " at iteration " << i;
+                EXPECT_EQ(agent.position,
+                    expectedPath[i][angetId]) << "agent " << angetId << " at iteration " << i;
                 EXPECT_EQ(agent.id, angetId);
             }
 
@@ -211,7 +217,9 @@ TEST_F(CSPTest, SingleAgentEvaluatesOnlyValidCandidatesAndUsesFitness) {
             evaluated.emplace_back(candidate.position, is_staying);
             return is_staying ? 10 : -1;
         },
-        [] { return false; }
+        [] {
+            return false;
+        }
     );
 
     const auto updated = processGroup(csp, agents, map);
@@ -238,7 +246,9 @@ TEST_F(CSPTest, AgentsAtGoalsWaitWithoutEvaluatingFitness) {
             ++evaluations;
             return int64_t{0};
         },
-        [] { return false; }
+        [] {
+            return false;
+        }
     );
 
     for (const auto& group : {std::vector<Agent>{agents[0]}, agents}) {
@@ -262,7 +272,9 @@ TEST_F(CSPTest, GoalWaitUpdatesImmediateReturnAndPreservesMemory) {
     MemoryAgent agent({0, 0}, {1, 0}, 2);
     agent.moveTo({1, 0});
     ASSERT_TRUE(agent.isImmediateReturn({0, 0}));
-    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {2, 1, true});
+    CSP csp(CSP::getFitness("manhattan"), [] {
+                return false;
+            }, {2, 1, true});
 
     const auto result = processWithoutImmediateReturn(csp, {agent}, map);
 
@@ -284,7 +296,9 @@ TEST_F(CSPTest, SingleAgentCanPreferStaying) {
         [](const Map&, const std::vector<Agent>&, const Agent&, bool is_staying) {
             return is_staying ? int64_t{-5} : int64_t{0};
         },
-        [] { return false; }
+        [] {
+            return false;
+        }
     );
 
     const auto updated = processGroup(csp, agents, map);
@@ -294,7 +308,7 @@ TEST_F(CSPTest, SingleAgentCanPreferStaying) {
 }
 
 TEST_F(CSPTest, AgentsMovesTowardsTheGoal) {
-    // A0 _ G0 
+    // A0 _ G0
     // A1 _ G1
     const Map map{
         .type = "test",
@@ -436,7 +450,7 @@ TEST_F(CSPTest, ReturnsPartialPathsWhenInterruptedBetweenIterations) {
 
 TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
     const Map map{.type = "test", .height = 1, .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}};
+                  .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}};
     const std::vector<Scenario> scenarios = {
         {.startX = 0, .startY = 0, .goalX = 2, .goalY = 0},
         {.startX = 2, .startY = 0, .goalX = 0, .goalY = 0}
@@ -449,7 +463,9 @@ TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
             ++evaluations;
             return int64_t{0};
         },
-        [&checks] { return checks++ > 0; }
+        [&checks] {
+            return checks++ > 0;
+        }
     );
 
     const auto paths = csp.resolve(map, scenarios);
@@ -461,8 +477,8 @@ TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
 
 TEST_F(CSPTest, ChainedDomainOverlapsPreventVertexCollisions) {
     const Map map{.type = "test", .height = 1, .width = 5,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
-                {{3, 0}, false}, {{4, 0}, false}}};
+                  .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
+                      {{3, 0}, false}, {{4, 0}, false}}};
     const std::vector<Agent> agents = {
         {{0, 0}, {1, 0}}, {{2, 0}, {1, 0}}, {{4, 0}, {3, 0}}
     };
@@ -477,8 +493,8 @@ TEST_F(CSPTest, ChainedDomainOverlapsPreventVertexCollisions) {
 
 TEST_F(CSPTest, IndependentDomainsCanMoveAtTheSameTime) {
     const Map map{.type = "test", .height = 1, .width = 5,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true},
-                {{3, 0}, false}, {{4, 0}, false}}};
+                  .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true},
+                      {{3, 0}, false}, {{4, 0}, false}}};
     const std::vector<Agent> agents = {
         {{0, 0}, {1, 0}}, {{4, 0}, {3, 0}}
     };
@@ -492,11 +508,13 @@ TEST_F(CSPTest, IndependentDomainsCanMoveAtTheSameTime) {
 
 TEST_F(CSPTest, ReturnRestrictionStillPreventsCollisionWithNeighbor) {
     const Map map{.type = "test", .height = 1, .width = 2,
-        .map = {{{0, 0}, false}, {{1, 0}, false}}};
+                  .map = {{{0, 0}, false}, {{1, 0}, false}}};
     MemoryAgent first({0, 0}, {0, 0}, 0);
     first.moveTo({1, 0});
     MemoryAgent second({0, 0}, {1, 0}, 0);
-    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {0, 0, true});
+    CSP csp(CSP::getFitness("manhattan"), [] {
+                return false;
+            }, {0, 0, true});
 
     const auto result = processWithoutImmediateReturn(csp, {first, second}, map);
     ASSERT_EQ(result.size(), 2);
@@ -539,10 +557,13 @@ TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {
     };
     MemoryAgent agent({0, 0}, {0, 0}, 2);
     agent.moveTo({1, 0});
-    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate,
+                            bool staying) -> int64_t {
         return staying ? 10 : static_cast<int64_t>(candidate.position.first);
     };
-    CSP csp(fitness, [] { return false; }, {2, 5});
+    CSP csp(fitness, [] {
+                return false;
+            }, {2, 5});
 
     auto result = processMemoryGroup(csp, {agent}, map);
     ASSERT_EQ(result.size(), 1);
@@ -561,8 +582,12 @@ TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {
 }
 
 TEST_F(CSPTest, RejectsInvalidMemoryConfiguration) {
-    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] { return false; }, {0, 1})), std::invalid_argument);
-    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] { return false; }, {1, 0})), std::invalid_argument);
+    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] {
+            return false;
+        }, {0, 1})), std::invalid_argument);
+    EXPECT_THROW((CSP(CSP::getFitness("manhattan"), [] {
+            return false;
+        }, {1, 0})), std::invalid_argument);
 }
 
 TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
@@ -578,11 +603,14 @@ TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
         .goalX = 2,
         .goalY = 0
     }};
-    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate,
+                            bool staying) -> int64_t {
         return staying ? 10 : static_cast<int64_t>(candidate.position.first);
     };
     std::size_t checks = 0;
-    CSP csp(fitness, [&checks] { return checks++ >= 3; }, {2, 5});
+    CSP csp(fitness, [&checks] {
+                return checks++ >= 3;
+            }, {2, 5});
 
     const auto paths = csp.resolve(map, scenarios);
 
@@ -631,7 +659,9 @@ TEST_F(CSPTest, NonlinearFitnessWorksWithMemoryPenalty) {
     agent.moveTo({1, 0});
 
     for (const auto* name : {"squared", "piecewise", "log"}) {
-        CSP csp(CSP::getFitness(name), [] { return false; }, {1, 2000});
+        CSP csp(CSP::getFitness(name), [] {
+                    return false;
+                }, {1, 2000});
         const auto result = processMemoryGroup(csp, {agent}, map);
         ASSERT_EQ(result.size(), 1);
         EXPECT_EQ(result[0].position, AgentCord(1, 0)) << name;
@@ -672,7 +702,9 @@ TEST_F(CSPTest, ImmediateReturnIsForbiddenButAllowedAfterWaiting) {
     };
     MemoryAgent agent({0, 0}, {0, 0}, 0);
     agent.moveTo({1, 0});
-    CSP csp(CSP::getFitness("manhattan"), [] { return false; }, {0, 0, true});
+    CSP csp(CSP::getFitness("manhattan"), [] {
+                return false;
+            }, {0, 0, true});
 
     auto result = processWithoutImmediateReturn(csp, {agent}, map);
     ASSERT_EQ(result.size(), 1);
@@ -692,10 +724,13 @@ TEST_F(CSPTest, ImmediateReturnIsForbiddenWithMemoryPenalty) {
     };
     MemoryAgent agent({0, 0}, {0, 0}, 2);
     agent.moveTo({1, 0});
-    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate,
+                            bool staying) -> int64_t {
         return staying ? 10 : static_cast<int64_t>(candidate.position.first);
     };
-    CSP csp(fitness, [] { return false; }, {2, 1, true});
+    CSP csp(fitness, [] {
+                return false;
+            }, {2, 1, true});
 
     const auto result = processWithoutImmediateReturn(csp, {agent}, map);
     ASSERT_EQ(result.size(), 1);
@@ -712,11 +747,14 @@ TEST_F(CSPTest, ImmediateReturnIsPreventedAcrossIterations) {
     const std::vector<Scenario> scenarios = {{
         .startX = 0, .startY = 0, .goalX = 2, .goalY = 0
     }};
-    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate, bool staying) -> int64_t {
+    const auto fitness = [](const Map&, const std::vector<Agent>&, const Agent& candidate,
+                            bool staying) -> int64_t {
         return staying ? 10 : static_cast<int64_t>(candidate.position.first);
     };
     std::size_t checks = 0;
-    CSP csp(fitness, [&checks] { return checks++ >= 3; }, {0, 0, true});
+    CSP csp(fitness, [&checks] {
+                return checks++ >= 3;
+            }, {0, 0, true});
 
     const auto paths = csp.resolve(map, scenarios);
     ASSERT_EQ(paths.size(), 1);

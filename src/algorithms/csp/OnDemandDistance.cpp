@@ -72,7 +72,8 @@ OnDemandDistance::OnDemandDistance(
     const std::vector<Scenario>& scenarios,
     const std::string& method
 ) : map(map), method(method) {
-    if (method != "lazy-bfs" && method != "lazy-astar" && method != "astar" && method != "lazy-jps") {
+    if (method != "lazy-bfs" && method != "lazy-astar" && method != "astar" &&
+        method != "lazy-jps") {
         throw std::invalid_argument("Unknown shortest-path method: " + method);
     }
     for (const auto& scenario : scenarios) {
@@ -167,7 +168,8 @@ int64_t OnDemandDistance::search(AgentCord start, AgentCord goal, bool jump_poin
         AgentCord position;
         Direction incoming;
         bool operator>(const Node& other) const {
-            return std::tie(priority, cost, position) > std::tie(other.priority, other.cost, other.position);
+            return std::tie(priority, cost, position) > std::tie(other.priority, other.cost,
+                other.position);
         }
     };
     const auto infinity = std::numeric_limits<int64_t>::max();
@@ -214,7 +216,8 @@ int64_t OnDemandDistance::search(AgentCord start, AgentCord goal, bool jump_poin
                 if (jump_points && direction.second != 0) {
                     for (const int dx : {-1, 1}) {
                         const Direction side{dx, 0};
-                        if (passable(map, step(next, side)) && !passable(map, step(previous, side))) {
+                        if (passable(map, step(next, side)) && !passable(map,
+                            step(previous, side))) {
                             forced = true;
                         }
                     }

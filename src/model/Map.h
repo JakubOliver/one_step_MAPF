@@ -36,5 +36,4 @@ public:
     }
 };
 
-
 #endif //MAPF_MAP_H

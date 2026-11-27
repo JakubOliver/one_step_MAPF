@@ -1,0 +1,50 @@
+name: C++ formatting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'benchmarks/**'
+      - 'uncrustify.cfg'
+      - '.github/workflows/format.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  formatting:
+    name: Uncrustify 0.81.0 (informational)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Build Uncrustify 0.81.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch uncrustify-0.81.0 \
+            https://github.com/uncrustify/uncrustify.git "$RUNNER_TEMP/uncrustify"
+          cmake -S "$RUNNER_TEMP/uncrustify" -B "$RUNNER_TEMP/uncrustify-build" \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build "$RUNNER_TEMP/uncrustify-build" --parallel 2
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          find src tests benchmarks -type f \( -name '*.cpp' -o -name '*.h' \) \
+            | LC_ALL=C sort > "$RUNNER_TEMP/uncrustify-files.txt"
+          "$RUNNER_TEMP/uncrustify-build/uncrustify" \
+            -c uncrustify.cfg -l CPP --check -F "$RUNNER_TEMP/uncrustify-files.txt"
+
+      - name: Report formatting check failure
+        if: failure()
+        run: |
+          echo '::warning::The informational formatting check failed; see the job log for details.'
+          echo 'Uncrustify could not complete or found formatting differences. See the job log.' >> "$GITHUB_STEP_SUMMARY"

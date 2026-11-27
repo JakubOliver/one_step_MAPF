@@ -59,10 +59,12 @@ int64_t piecewiseCost(uint64_t distance, bool staying) {
 
 } // namespace
 
-RandomFitness::RandomFitness() : RandomFitness(std::random_device{}()) {}
+RandomFitness::RandomFitness() : RandomFitness(std::random_device{}()) {
+}
 
 RandomFitness::RandomFitness(std::uint32_t seed)
-    : generator(seed), distribution(1.0, 1.0) {}
+    : generator(seed), distribution(1.0, 1.0) {
+}
 
 int64_t RandomFitness::evaluate(uint64_t distance, bool is_staying) {
     if (is_staying) {
@@ -94,8 +96,8 @@ Fitness::DistanceFunction Fitness::shortestPathDistance(
 ) {
     auto distances = std::make_shared<DistanceCache>(map, scenarios);
     return [distances](const Agent& agent) {
-        return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
-    };
+               return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
+           };
 }
 
 Fitness::DistanceFunction Fitness::shortestPathDistance(
@@ -108,8 +110,8 @@ Fitness::DistanceFunction Fitness::shortestPathDistance(
     }
     auto distances = std::make_shared<OnDemandDistance>(map, scenarios, method);
     return [distances](const Agent& agent) {
-        return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
-    };
+               return static_cast<uint64_t>(distances->distance(agent.position, agent.goal));
+           };
 }
 
 Fitness::FitnessFunction Fitness::getFitness(const std::string& name) {
@@ -121,7 +123,7 @@ Fitness::FitnessFunction Fitness::getFitness(const std::string& name, DistanceFu
         throw std::invalid_argument("CSP distance function must be provided");
     }
 
-    using CostFunction = std::function<int64_t(uint64_t, bool)>;
+    using CostFunction = std::function<int64_t (uint64_t, bool)>;
     CostFunction cost;
     if (name == "manhattan") {
         cost = linearCost;
@@ -153,6 +155,6 @@ Fitness::FitnessFunction Fitness::getFitness(const std::string& name, DistanceFu
     return [distance = std::move(distance), cost = std::move(cost)](
         const Map&, const std::vector<Agent>&, const Agent& agent, bool staying
     ) {
-        return cost(distance(agent), staying);
-    };
+               return cost(distance(agent), staying);
+           };
 }

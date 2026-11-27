@@ -27,5 +27,4 @@ public:
     virtual ~Algorithm() = default;
 };
 
-
 #endif //MAPF_ALGORITHM_H

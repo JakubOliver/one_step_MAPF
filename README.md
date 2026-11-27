@@ -110,15 +110,20 @@ cmake --build --preset release --target benchmark
 
 ## C++ formatting
 
-The repository's `.clang-format` configures clang-format 14 or newer. Editors
-can use this file for formatting on save, or an individual file can be formatted
-from the project root:
+The repository uses `uncrustify.cfg` with Uncrustify 0.81.0. Preview the
+formatting of an individual file from the project root without changing it:
 
 ```sh
-clang-format -i src/model/Agent.cpp
+uncrustify -q -c uncrustify.cfg -l CPP -f src/model/Agent.cpp
+```
+
+To format the file in place, use:
+
+```sh
+uncrustify -q -c uncrustify.cfg -l CPP --replace --no-backup src/model/Agent.cpp
 ```
 
 The formatter preserves intentional blank lines within functions, but cannot
-determine where logical sections of a test should be separated. Add those
-blank lines when writing the test. Formatting is not currently enforced by CI;
-existing files can be formatted incrementally when they are changed.
+determine where logical sections of a test should be separated. Add those blank
+lines when writing the test. CI checks formatting as an informational,
+non-blocking job.

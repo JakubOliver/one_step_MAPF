@@ -35,5 +35,4 @@ public:
     );
 };
 
-
 #endif //MAPF_GROUPING_H

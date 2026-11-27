@@ -12,7 +12,7 @@ namespace {
 
 std::string formatPosition(AgentCord position) {
     return "(" + std::to_string(position.first) + ", "
-        + std::to_string(position.second) + ")";
+           + std::to_string(position.second) + ")";
 }
 
 }
@@ -65,7 +65,7 @@ std::optional<std::string> Validator::pathsMatchScenarios(
 ) {
     if (scenarios.size() != paths.size()) {
         return "Expected " + std::to_string(scenarios.size())
-            + " paths, but received " + std::to_string(paths.size());
+               + " paths, but received " + std::to_string(paths.size());
     }
 
     if (!require_goal) {
@@ -81,7 +81,7 @@ std::optional<std::string> Validator::pathsMatchScenarios(
             const auto start = unmatchedStarts.find(path.front());
             if (start == unmatchedStarts.end() || start->second == 0) {
                 return "Path " + std::to_string(pathIndex) + " starts at "
-                    + formatPosition(path.front()) + " without an unmatched scenario";
+                       + formatPosition(path.front()) + " without an unmatched scenario";
             }
             --start->second;
         }
@@ -93,9 +93,9 @@ std::optional<std::string> Validator::pathsMatchScenarios(
 
     for (const auto& scenario : scenarios) {
         unmatchedScenarios[{
-            {scenario.startX, scenario.startY},
-            {scenario.goalX, scenario.goalY}
-        }]++;
+                               {scenario.startX, scenario.startY},
+                               {scenario.goalX, scenario.goalY}
+                           }]++;
     }
 
     for (std::size_t pathIndex = 0; pathIndex < paths.size(); ++pathIndex) {
@@ -108,9 +108,9 @@ std::optional<std::string> Validator::pathsMatchScenarios(
         const auto scenario = unmatchedScenarios.find(endpoints);
         if (scenario == unmatchedScenarios.end() || scenario->second == 0) {
             return "Path " + std::to_string(pathIndex) + " from "
-                + formatPosition(path.front()) + " to "
-                + formatPosition(path.back())
-                + " does not match an unmatched scenario";
+                   + formatPosition(path.front()) + " to "
+                   + formatPosition(path.back())
+                   + " does not match an unmatched scenario";
         }
         scenario->second--;
     }
@@ -142,8 +142,8 @@ std::optional<std::string> Validator::pathsUseValidPositions(
 
             if (!reason.empty()) {
                 return "Path " + std::to_string(pathIndex) + " position "
-                    + formatPosition(position) + " at time "
-                    + std::to_string(time) + " " + reason;
+                       + formatPosition(position) + " at time "
+                       + std::to_string(time) + " " + reason;
             }
         }
     }
@@ -160,10 +160,10 @@ std::optional<std::string> Validator::pathsUseValidMoves(
         for (std::size_t time = 1; time < path.size(); ++time) {
             if (!Agent::isValidMove(path[time - 1], path[time])) {
                 return "Path " + std::to_string(pathIndex)
-                    + " has an invalid move from "
-                    + formatPosition(path[time - 1]) + " to "
-                    + formatPosition(path[time]) + " at time "
-                    + std::to_string(time);
+                       + " has an invalid move from "
+                       + formatPosition(path[time - 1]) + " to "
+                       + formatPosition(path[time]) + " at time "
+                       + std::to_string(time);
             }
         }
     }
@@ -188,9 +188,9 @@ std::optional<std::string> Validator::pathsHaveNoVertexCollisions(
 
             if (!inserted) {
                 return "Paths " + std::to_string(occupant->second) + " and "
-                    + std::to_string(pathIndex) + " collide at "
-                    + formatPosition(position) + " at time "
-                    + std::to_string(time);
+                       + std::to_string(pathIndex) + " collide at "
+                       + formatPosition(position) + " at time "
+                       + std::to_string(time);
             }
         }
     }
@@ -223,10 +223,10 @@ std::optional<std::string> Validator::pathsHaveNoEdgeCollisions(
                     && secondPrevious == firstCurrent
                 ) {
                     return "Paths " + std::to_string(first) + " and "
-                        + std::to_string(second) + " swap positions "
-                        + formatPosition(firstPrevious) + " and "
-                        + formatPosition(firstCurrent) + " at time "
-                        + std::to_string(time);
+                           + std::to_string(second) + " swap positions "
+                           + formatPosition(firstPrevious) + " and "
+                           + formatPosition(firstCurrent) + " at time "
+                           + std::to_string(time);
                 }
             }
         }
