@@ -18,6 +18,9 @@ paths that can be checked by the validator and exported for visualization.
    getting-started
    architecture
    algorithms
+   how-it-works
+   research-progress
+   gallery
    approaches
    benchmarks
    development
