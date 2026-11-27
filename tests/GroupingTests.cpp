@@ -10,6 +10,66 @@
 #include "model/Agent.h"
 #include "algorithms/csp/Grouping.h"
 
+TEST(StagnationTest, TracksBestDistanceAndResetsAfterLeavingGoal) {
+    Agent agent({0, 0}, {3, 0});
+    agent.updateStagnation(3);
+
+    agent.updateStagnation(4);
+    agent.updateStagnation(3);
+    EXPECT_EQ(agent.stagnation(), 2);
+
+    agent.updateStagnation(2);
+    EXPECT_EQ(agent.stagnation(), 0);
+
+    agent.position = agent.goal;
+    agent.updateStagnation(0);
+    agent.updateStagnation(0);
+    EXPECT_EQ(agent.stagnation(), 0);
+
+    agent.position = {2, 0};
+    agent.updateStagnation(1, true);
+    agent.updateStagnation(1);
+    EXPECT_EQ(agent.stagnation(), 1);
+
+    agent.updateStagnation(0);
+    EXPECT_EQ(agent.stagnation(), 0);
+}
+
+TEST(StagnationTest, GroupUsesActiveAgentsAndStrictIterationThreshold) {
+    Agent stagnant({0, 0}, {5, 0});
+    stagnant.updateStagnation(5);
+    for (int i = 0; i < 10; ++i) {
+        stagnant.updateStagnation(5);
+    }
+
+    Agent progressing({1, 0}, {5, 0});
+    progressing.updateStagnation(4);
+
+    Agent at_goal({5, 0}, {5, 0});
+    at_goal.updateStagnation(0);
+
+    Group<Agent> group{.agents = {stagnant, progressing, at_goal}};
+    EXPECT_FALSE(group.halfStagnating());
+
+    group.agents[0].updateStagnation(5);
+    EXPECT_EQ(group.maxStagnation(), 11);
+    EXPECT_TRUE(group.halfStagnating());
+    EXPECT_TRUE(group.xStagnating(50));
+    EXPECT_FALSE(group.xStagnating(51));
+    EXPECT_FALSE(group.isStagnating());
+    for (int i = 0; i < 11; ++i) {
+        group.agents[1].updateStagnation(4);
+    }
+
+    EXPECT_TRUE(group.isStagnating());
+    EXPECT_THROW(group.xStagnating(101), std::invalid_argument);
+
+    Group<Agent> finished{.agents = {at_goal}};
+    EXPECT_EQ(finished.maxStagnation(), 0);
+    EXPECT_FALSE(finished.isStagnating());
+    EXPECT_FALSE(finished.xStagnating(0));
+}
+
 namespace {
 
 using Position = AgentCord;

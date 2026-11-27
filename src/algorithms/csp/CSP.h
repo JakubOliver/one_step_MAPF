@@ -38,12 +38,14 @@ public:
     explicit CSP(std::function<bool()> interruption_requested);
     explicit CSP(
         FitnessFunction fitness,
-        std::function<bool()> interruption_requested
+        std::function<bool()> interruption_requested,
+        Fitness::DistanceFunction distance = Fitness::manhattanDistance
     );
     CSP(
         FitnessFunction fitness,
         std::function<bool()> interruption_requested,
-        MemoryOptions memory
+        MemoryOptions memory,
+        Fitness::DistanceFunction distance = Fitness::manhattanDistance
     );
 
 private:
@@ -51,6 +53,7 @@ private:
     std::function<bool()> interruption_requested;
     bool group_solve_interrupted = false;
     FitnessFunction fitness;
+    Fitness::DistanceFunction distance;
     MemoryOptions memory{0, 0};
 
     std::vector<AgentPath> resolve_(
