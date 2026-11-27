@@ -328,3 +328,21 @@ TEST(GroupingTest, OmitsBlockedEdgeWithinConnectedGroup) {
 }
 
 } // namespace
+
+TEST(CorridorTest, DetectsWallsAndMapBoundaryAndCountsWholeGroup) {
+    const Map map{.type = "test", .height = 3, .width = 4, .map = {
+        {{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}, {{3, 0}, false},
+        {{0, 1}, true}, {{1, 1}, true}, {{2, 1}, false}, {{3, 1}, false},
+        {{0, 2}, false}, {{1, 2}, false}, {{2, 2}, false}, {{3, 2}, false}
+    }};
+    EXPECT_TRUE(map.isInCorridor({1, 0}));
+    EXPECT_FALSE(map.isInCorridor({2, 1}));
+    EXPECT_FALSE(map.isInCorridor({0, 1}));
+    EXPECT_FALSE(map.isInCorridor({4, 0}));
+
+    Group<Agent> group{.agents = {Agent({1, 0}, {1, 0}), Agent({2, 1}, {0, 0})}};
+    EXPECT_TRUE(group.xInCorridor(map, 50));
+    EXPECT_FALSE(group.xInCorridor(map, 80));
+    EXPECT_THROW(group.xInCorridor(map, -1), std::invalid_argument);
+    EXPECT_FALSE(Group<Agent>{}.xInCorridor(map, 0));
+}

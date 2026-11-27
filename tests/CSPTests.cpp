@@ -948,3 +948,64 @@ TEST(AlgorithmRunnerTest, RunsCspWithOptionsAndRejectsInvalidConfiguration) {
     arguments->algorithm = "unknown";
     EXPECT_THROW(util::runAlgorithm(*arguments, map, scenarios), std::invalid_argument);
 }
+
+TEST_F(CSPTest, StagnantCorridorGroupVotesAndKeepsDirection) {
+    const Map map{.type = "test", .height = 1, .width = 7, .map = {
+        {{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}, {{3, 0}, false},
+        {{4, 0}, false}, {{5, 0}, false}, {{6, 0}, false}
+    }};
+    std::vector<Agent> agents = {Agent({2, 0}, {0, 0}), Agent({3, 0}, {6, 0})};
+    for (auto& agent : agents) {
+        for (int i = 0; i < 12; ++i) {
+            agent.updateStagnation(5);
+        }
+    }
+    CSP csp;
+    auto moved = processGroup(csp, agents, map);
+    ASSERT_EQ(moved.size(), 2);
+    EXPECT_EQ(moved[0].position, AgentCord(3, 0));
+    EXPECT_EQ(moved[1].position, AgentCord(4, 0));
+    EXPECT_EQ(moved[0].corridor_direction, CorridorDirection::Right);
+
+    // Change both votes; the existing decision must survive the next step.
+    moved[0].goal = {0, 0};
+    moved[1].goal = {0, 0};
+    auto next = processGroup(csp, moved, map);
+    ASSERT_EQ(next.size(), 2);
+    EXPECT_EQ(next[0].position, AgentCord(4, 0));
+    EXPECT_EQ(next[1].position, AgentCord(5, 0));
+}
+
+TEST_F(CSPTest, VerticalCorridorUsesUpOnTieAndRejectsSwaps) {
+    const Map map{.type = "test", .height = 6, .width = 1, .map = {
+        {{0, 0}, false}, {{0, 1}, false}, {{0, 2}, false},
+        {{0, 3}, false}, {{0, 4}, false}, {{0, 5}, false}
+    }};
+    std::vector<Agent> agents = {Agent({0, 2}, {0, 0}), Agent({0, 3}, {0, 5})};
+    for (auto& agent : agents) {
+        for (int i = 0; i < 12; ++i) {
+            agent.updateStagnation(5);
+        }
+    }
+    CSP csp;
+    auto moved = processGroup(csp, agents, map);
+    ASSERT_EQ(moved.size(), 2);
+    EXPECT_EQ(moved[0].corridor_direction, CorridorDirection::Up);
+    EXPECT_EQ(moved[0].position, AgentCord(0, 1));
+    EXPECT_EQ(moved[1].position, AgentCord(0, 2));
+}
+
+TEST_F(CSPTest, CorridorDecisionClearsOutsideCorridor) {
+    const Map map{.type = "test", .height = 3, .width = 3, .map = {
+        {{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
+        {{0, 1}, false}, {{1, 1}, false}, {{2, 1}, false},
+        {{0, 2}, false}, {{1, 2}, false}, {{2, 2}, false}
+    }};
+    Agent agent({1, 1}, {0, 1});
+    agent.corridor_direction = CorridorDirection::Right;
+    CSP csp;
+    auto moved = processGroup(csp, {agent}, map);
+    ASSERT_EQ(moved.size(), 1);
+    EXPECT_FALSE(moved[0].corridor_direction);
+    EXPECT_EQ(moved[0].position, AgentCord(0, 1));
+}
