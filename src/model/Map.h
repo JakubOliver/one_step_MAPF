@@ -26,6 +26,7 @@ public:
     bool isInBounds(AgentCord pos) const;
     bool isBlocked(std::size_t x, std::size_t y) const;
     bool isBlocked(AgentCord pos) const;
+    bool isInCorridor(AgentCord pos) const;
 
     void print(std::ostream& os) const {
         os << "Map: " << type << " " << height << " " << width;
