@@ -48,6 +48,16 @@ struct Group {
         return active > 0 && 100.0 * stagnant >= percentage * active;
     }
 
+    bool xInCorridor(const Map& map, double percentage) const {
+        if (!(percentage >= 0 && percentage <= 100)) {
+            throw std::invalid_argument("Corridor percentage must be between 0 and 100");
+        }
+        const auto count = std::count_if(agents.begin(), agents.end(), [&](const auto& agent) {
+            return map.isInCorridor(agent.position);
+        });
+        return !agents.empty() && 100.0 * count >= percentage * agents.size();
+    }
+
     bool isStagnating() const { return xStagnating(100); }
     bool halfStagnating() const { return xStagnating(50); }
 };

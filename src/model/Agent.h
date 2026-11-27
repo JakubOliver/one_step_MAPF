@@ -18,6 +18,9 @@
 
 using AgentId = std::size_t;
 
+// Direction priority: up, right, down, left.
+enum class CorridorDirection { Up, Right, Down, Left };
+
 struct Agent {
 private:
     inline static std::atomic<AgentId> nextId{0};
@@ -28,6 +31,7 @@ private:
 public:
     AgentCord position;
     AgentCord goal;
+    std::optional<CorridorDirection> corridor_direction;
     const AgentId id;
 
     void updateStagnation(std::uint64_t distance, bool left_goal = false);

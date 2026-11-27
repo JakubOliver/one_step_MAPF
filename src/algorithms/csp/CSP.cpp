@@ -6,6 +6,7 @@
 
 #include "algorithms/csp/Grouping.h"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <map>
@@ -81,6 +82,79 @@ int64_t from_pos_to_index(
     );
 }
 
+namespace {
+
+bool movesInDirection(AgentCord from, AgentCord to, CorridorDirection direction) {
+    switch (direction) {
+    case CorridorDirection::Up: return to.first == from.first && to.second < from.second;
+    case CorridorDirection::Right: return to.second == from.second && to.first > from.first;
+    case CorridorDirection::Down: return to.first == from.first && to.second > from.second;
+    case CorridorDirection::Left: return to.second == from.second && to.first < from.first;
+    }
+    return false;
+}
+
+CorridorDirection opposite(CorridorDirection direction) {
+    return static_cast<CorridorDirection>((static_cast<int>(direction) + 2) % 4);
+}
+
+template<typename AgentType>
+std::optional<CorridorDirection> corridorDirection(const Group<AgentType>& group, const Map& map) {
+    if (!group.xInCorridor(map, 80)) {
+        return std::nullopt;
+    }
+
+    // A direction survives group splits and merges. In a merge, the oldest
+    // agent's existing decision wins, so the result is deterministic.
+    const AgentType* leader = nullptr;
+    for (const auto& agent : group.agents) {
+        if (agent.corridor_direction && (!leader || agent.id < leader->id)) {
+            leader = &agent;
+        }
+    }
+    if (leader) {
+        return leader->corridor_direction;
+    }
+    if (!group.xStagnating(80)) {
+        return std::nullopt;
+    }
+
+    std::size_t horizontal = 0;
+    std::size_t vertical = 0;
+    for (const auto& agent : group.agents) {
+        const auto [x, y] = agent.position;
+        const bool up = y == 0 || map.isBlocked(x, y - 1);
+        const bool right = x == map.width - 1 || map.isBlocked(x + 1, y);
+        const bool down = y == map.height - 1 || map.isBlocked(x, y + 1);
+        const bool left = x == 0 || map.isBlocked(x - 1, y);
+        horizontal += up && down && !left && !right;
+        vertical += left && right && !up && !down;
+    }
+    // TODO: L-shaped corridors need a path-aware direction and a rule for
+    // updating the agreed direction/distance at bends.
+    const bool is_horizontal = 100.0 * horizontal >= 80.0 * group.agents.size();
+    const bool is_vertical = 100.0 * vertical >= 80.0 * group.agents.size();
+    if (!is_horizontal && !is_vertical) {
+        return std::nullopt;
+    }
+
+    std::array<std::size_t, 4> votes{};
+    for (const auto& agent : group.agents) {
+        if (is_horizontal && agent.goal.first != agent.position.first) {
+            ++votes[agent.goal.first > agent.position.first ? 1 : 3];
+        } else if (is_vertical && agent.goal.second != agent.position.second) {
+            ++votes[agent.goal.second > agent.position.second ? 2 : 0];
+        }
+    }
+    // Agents with no component along the corridor abstain; ties use U,R,D,L.
+    if (is_horizontal) {
+        return votes[1] >= votes[3] ? CorridorDirection::Right : CorridorDirection::Left;
+    }
+    return votes[0] >= votes[2] ? CorridorDirection::Up : CorridorDirection::Down;
+}
+
+}
+
 template<typename AgentType, bool PreventImmediateReturn>
 std::vector<AgentType> CSP::processGroupTyped(
     const Group<AgentType>& group,
@@ -88,11 +162,15 @@ std::vector<AgentType> CSP::processGroupTyped(
 ) {
     const auto& agents = group.agents;
     group_solve_interrupted = false;
+    const auto corridor_direction = corridorDirection(group, map);
 
     if (std::all_of(agents.begin(), agents.end(), [](const auto& agent) {
             return agent.isAtGoal();
         })) {
         auto waiting_agents = agents;
+        for (auto& agent : waiting_agents) {
+            agent.corridor_direction.reset();
+        }
         if constexpr (std::is_same_v<AgentType, MemoryAgent>) {
             for (auto& agent : waiting_agents) {
                 agent.moveTo(agent.position);
@@ -149,8 +227,13 @@ std::vector<AgentType> CSP::processGroupTyped(
                 }
             }
 
+            if (corridor_direction && movesInDirection(agent.position, pos, opposite(*corridor_direction))) {
+                return;
+            }
             const auto cost = candidate_cost(agent, pos, is_staying);
-            if (!found_candidate || cost < best_cost) {
+            const bool forward = corridor_direction && movesInDirection(agent.position, pos, *corridor_direction);
+            const bool best_forward = corridor_direction && movesInDirection(agent.position, best_position, *corridor_direction);
+            if (!found_candidate || (forward && !best_forward) || (forward == best_forward && cost < best_cost)) {
                 best_position = pos;
                 best_cost = cost;
                 found_candidate = true;
@@ -168,6 +251,7 @@ std::vector<AgentType> CSP::processGroupTyped(
             } else {
                 best.position = best_position;
             }
+            best.corridor_direction = corridor_direction;
             return {best};
         }
 
@@ -184,10 +268,12 @@ std::vector<AgentType> CSP::processGroupTyped(
     domains.reserve(agents.size());
 
     LinearExpr objective;
+    LinearExpr forward_objective;
 
     for (const auto& agent : agents) {
         std::vector<int64_t> Q_pos;
         std::vector<int64_t> costs;
+        std::vector<int64_t> forward_moves;
 
         auto add_candidate = [&](const auto& pos, bool is_staying = false) {
             if (!map.isInBounds(pos) || map.isBlocked(pos)) {
@@ -200,6 +286,10 @@ std::vector<AgentType> CSP::processGroupTyped(
                 }
             }
 
+            if (corridor_direction && movesInDirection(agent.position, pos, opposite(*corridor_direction))) {
+                return;
+            }
+            forward_moves.push_back(corridor_direction && movesInDirection(agent.position, pos, *corridor_direction));
             Q_pos.push_back(
                 from_pos_to_index(pos, map.width)
             );
@@ -242,6 +332,11 @@ std::vector<AgentType> CSP::processGroupTyped(
         cp_model.AddElement(choice, costs, cost);
 
         objective += cost;
+        if (corridor_direction) {
+            IntVar forward = cp_model.NewIntVar(Domain(0, 1));
+            cp_model.AddElement(choice, forward_moves, forward);
+            forward_objective += forward;
+        }
     }
 
     // Connected components of overlapping domains can be constrained independently.
@@ -295,7 +390,19 @@ std::vector<AgentType> CSP::processGroupTyped(
         });
     }
 
-    // Minimize total fitness.
+    // First maximize progress in the agreed direction, then use fitness to
+    // choose among equally progressive, collision-free assignments.
+    SatParameters parameters;
+    parameters.set_catch_sigint_signal(false);
+    if (corridor_direction) {
+        cp_model.Maximize(forward_objective);
+        const auto directional_response = SolveWithParameters(cp_model.Build(), parameters);
+        if (directional_response.status() != CpSolverStatus::OPTIMAL) {
+            group_solve_interrupted = true;
+            return {};
+        }
+        cp_model.AddEquality(forward_objective, SolutionIntegerValue(directional_response, forward_objective));
+    }
     cp_model.Minimize(objective);
 
     // NOTE: To generate one solution for successively worse fitness value,
@@ -304,9 +411,6 @@ std::vector<AgentType> CSP::processGroupTyped(
     // how close the fitness are and if it makeses sense to skipp etc.
     // For note better sollution sould be to desable found solution and
     // run the solver again, but this introduces overhead etc.
-
-    SatParameters parameters;
-    parameters.set_catch_sigint_signal(false);
 
     const CpSolverResponse response = SolveWithParameters(
         cp_model.Build(),
@@ -328,6 +432,7 @@ std::vector<AgentType> CSP::processGroupTyped(
     std::vector<AgentType> updated_agents = agents;
 
     for (std::size_t i = 0; i < agents_vars.size(); ++i) {
+        updated_agents[i].corridor_direction = corridor_direction;
         const int64_t index =
             SolutionIntegerValue(response, agents_vars[i]);
 
