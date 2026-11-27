@@ -32,8 +32,12 @@ void compareMap(const Map& map) {
             if (map.isBlocked(goal)) {
                 continue;
             }
-            const std::vector<Scenario> scenarios = {{.startX = x, .startY = y, .goalX = x,
-                .goalY = y}};
+            const std::vector<Scenario> scenarios = {{
+                .startX = x,
+                .startY = y,
+                .goalX = x,
+                .goalY = y
+            }};
             const DistanceCache expected(map, scenarios);
             for (const auto* method : {"lazy-bfs", "lazy-astar", "astar", "lazy-jps"}) {
                 OnDemandDistance actual(map, scenarios, method);

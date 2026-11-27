@@ -449,8 +449,16 @@ TEST_F(CSPTest, ReturnsPartialPathsWhenInterruptedBetweenIterations) {
 }
 
 TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
-    const Map map{.type = "test", .height = 1, .width = 3,
-                  .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}};
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 3,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, true},
+            {{2, 0}, false}
+        }
+    };
     const std::vector<Scenario> scenarios = {
         {.startX = 0, .startY = 0, .goalX = 2, .goalY = 0},
         {.startX = 2, .startY = 0, .goalX = 0, .goalY = 0}
@@ -476,9 +484,18 @@ TEST_F(CSPTest, FitnessReceivesGroupSeparatedByObstacle) {
 }
 
 TEST_F(CSPTest, ChainedDomainOverlapsPreventVertexCollisions) {
-    const Map map{.type = "test", .height = 1, .width = 5,
-                  .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false},
-                      {{3, 0}, false}, {{4, 0}, false}}};
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 5,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false},
+            {{3, 0}, false},
+            {{4, 0}, false}
+        }
+    };
     const std::vector<Agent> agents = {
         {{0, 0}, {1, 0}}, {{2, 0}, {1, 0}}, {{4, 0}, {3, 0}}
     };
@@ -492,9 +509,18 @@ TEST_F(CSPTest, ChainedDomainOverlapsPreventVertexCollisions) {
 }
 
 TEST_F(CSPTest, IndependentDomainsCanMoveAtTheSameTime) {
-    const Map map{.type = "test", .height = 1, .width = 5,
-                  .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true},
-                      {{3, 0}, false}, {{4, 0}, false}}};
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 5,
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, true},
+            {{3, 0}, false},
+            {{4, 0}, false}
+        }
+    };
     const std::vector<Agent> agents = {
         {{0, 0}, {1, 0}}, {{4, 0}, {3, 0}}
     };
@@ -553,7 +579,11 @@ TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
     };
     MemoryAgent agent({0, 0}, {0, 0}, 2);
     agent.moveTo({1, 0});
@@ -574,7 +604,11 @@ TEST_F(CSPTest, MemoryPenaltyChangesChoiceButDoesNotForbidReturn) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, true}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, true}
+        }
     };
     result = processMemoryGroup(csp, {agent}, blocked_map);
     ASSERT_EQ(result.size(), 1);
@@ -595,7 +629,11 @@ TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
     };
     const std::vector<Scenario> scenarios = {{
         .startX = 0,
@@ -625,7 +663,12 @@ TEST(CSPFitnessTest, NonlinearFitnessCostsAndWaitPenalties) {
         .type = "test",
         .height = 1,
         .width = 4,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}, {{3, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false},
+            {{3, 0}, false}
+        }
     };
     const std::vector<Agent> agents = {{{0, 0}, {3, 0}}};
     const Agent at_goal({3, 0}, {3, 0});
@@ -653,7 +696,11 @@ TEST_F(CSPTest, NonlinearFitnessWorksWithMemoryPenalty) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
     };
     MemoryAgent agent({0, 0}, {0, 0}, 1);
     agent.moveTo({1, 0});
@@ -720,7 +767,11 @@ TEST_F(CSPTest, ImmediateReturnIsForbiddenWithMemoryPenalty) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
     };
     MemoryAgent agent({0, 0}, {0, 0}, 2);
     agent.moveTo({1, 0});
@@ -742,7 +793,11 @@ TEST_F(CSPTest, ImmediateReturnIsPreventedAcrossIterations) {
         .type = "test",
         .height = 1,
         .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, false}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, false},
+            {{2, 0}, false}
+        }
     };
     const std::vector<Scenario> scenarios = {{
         .startX = 0, .startY = 0, .goalX = 2, .goalY = 0

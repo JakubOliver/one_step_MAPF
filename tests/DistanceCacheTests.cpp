@@ -42,7 +42,11 @@ TEST(DistanceCacheTest, ComputesDistancesAroundObstaclesAndSupportsSharedGoals) 
 TEST(DistanceCacheTest, RejectsInvalidGoalsAndUnreachableStarts) {
     const Map map{
         .type = "test", .height = 1, .width = 3,
-        .map = {{{0, 0}, false}, {{1, 0}, true}, {{2, 0}, false}}
+        .map = {
+            {{0, 0}, false},
+            {{1, 0}, true},
+            {{2, 0}, false}
+        }
     };
 
     EXPECT_THROW((DistanceCache(map, {{.startX = 0, .startY = 0, .goalX = 2, .goalY = 0}})),
