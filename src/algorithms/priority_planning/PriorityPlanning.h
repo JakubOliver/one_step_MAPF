@@ -26,7 +26,7 @@ struct PriorityPlaningState {
     }
 };
 
-class PriorityPlanning : public Algorithm{
+class PriorityPlanning : public Algorithm {
 private:
     std::set<PriorityPlaningState> states;
     std::map<AgentCord, std::size_t> finalPositions;
@@ -60,6 +60,5 @@ private:
 public:
     PriorityPlanning() = default;
 };
-
 
 #endif //MAPF_PRIORITYPLANING_H

@@ -139,8 +139,10 @@ template std::vector<Group<MemoryAgent>> Grouping::getGroups(
     const std::map<AgentCord, MemoryAgent>& agents
 );
 template std::vector<Group<Agent>> Grouping::getGroups(
-    const std::map<AgentCord, Agent>& agents, const Map& map
+    const std::map<AgentCord, Agent>& agents,
+    const Map& map
 );
 template std::vector<Group<MemoryAgent>> Grouping::getGroups(
-    const std::map<AgentCord, MemoryAgent>& agents, const Map& map
+    const std::map<AgentCord, MemoryAgent>& agents,
+    const Map& map
 );

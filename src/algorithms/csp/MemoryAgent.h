@@ -11,7 +11,8 @@
 class MemoryAgent : public Agent {
 public:
     MemoryAgent(AgentCord position, AgentCord goal, std::size_t capacity)
-        : Agent(position, goal), capacity(capacity) {}
+        : Agent(position, goal), capacity(capacity) {
+    }
 
     bool remembers(AgentCord position) const {
         return std::find(history.begin(), history.end(), position) != history.end();

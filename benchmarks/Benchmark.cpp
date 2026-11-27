@@ -60,7 +60,8 @@ std::size_t positiveNumber(const char* value, const std::string& name) {
         throw std::invalid_argument(name + " must be a positive integer");
     }
     const auto result = std::stoull(text, &parsed);
-    if (result == 0 || result > static_cast<unsigned long long>(std::numeric_limits<std::size_t>::max())) {
+    if (result == 0 ||
+        result > static_cast<unsigned long long>(std::numeric_limits<std::size_t>::max())) {
         throw std::invalid_argument(name + " must be a positive integer");
     }
     return static_cast<std::size_t>(result);
@@ -101,17 +102,22 @@ void printHelp(std::ostream& output, const std::string& command) {
                << "  algorithm      Measure preprocessing and CSP together\n\n"
                << "Use benchmark <command> --help for command details.\n";
     } else if (command == "preprocessing") {
-        output << "Usage: benchmark preprocessing <bfs|lazy-bfs|lazy-astar|astar|lazy-jps> <input-list> [agents-per-map]\n\n"
+        output <<
+            "Usage: benchmark preprocessing <bfs|lazy-bfs|lazy-astar|astar|lazy-jps> <input-list> [agents-per-map]\n\n"
                << "Measures distance initialization and start validation, excluding file loading.\n";
     } else {
-        output << "Usage: benchmark algorithm <bfs|lazy-bfs|lazy-astar|astar|lazy-jps|none> <input-list> [agents-per-map] [timeout-seconds]\n\n"
+        output <<
+            "Usage: benchmark algorithm <bfs|lazy-bfs|lazy-astar|astar|lazy-jps|none> <input-list> [agents-per-map] [timeout-seconds]\n\n"
                << "Measures preprocessing and CSP, excluding file loading and validation.\n"
                << "CSP uses memory size 5 and memory penalty 1.\n"
-               << "bfs, lazy-bfs, lazy-astar, astar and lazy-jps use exact distances; none uses Manhattan.\n"
-               << "The cooperative timeout includes initialization but cannot interrupt distance searches.\n";
+               <<
+            "bfs, lazy-bfs, lazy-astar, astar and lazy-jps use exact distances; none uses Manhattan.\n"
+               <<
+            "The cooperative timeout includes initialization but cannot interrupt distance searches.\n";
     }
     if (!command.empty()) {
-        output << "astar computes each complete distance field with h=0 (Dijkstra) at initialization.\n"
+        output <<
+            "astar computes each complete distance field with h=0 (Dijkstra) at initialization.\n"
                << "lazy-astar uses A* with Manhattan distance for individual queries.\n";
         output << "The input list contains map and scenario path pairs,\n"
                << "separated by whitespace and relative to the working directory.\n"
@@ -174,7 +180,8 @@ int main(int argc, char** argv) {
                 if (scenarios.size() < agent_count) {
                     throw std::runtime_error("Scenario has fewer agents than requested");
                 }
-                scenarios = std::vector<Scenario>(scenarios.begin(), scenarios.begin() + agent_count);
+                scenarios = std::vector<Scenario>(scenarios.begin(),
+                    scenarios.begin() + agent_count);
                 std::set<AgentCord> goals;
                 for (const auto& scenario : scenarios) {
                     goals.emplace(scenario.goalX, scenario.goalY);

@@ -107,3 +107,23 @@ cmake --build --preset release --target benchmark
 ./out/build/release/benchmark algorithm bfs benchmarks/maps.txt 10 30 > bfs.csv
 ./out/build/release/benchmark algorithm none benchmarks/maps.txt 10 30 > none.csv
 ```
+
+## C++ formatting
+
+The repository uses `uncrustify.cfg` with Uncrustify 0.81.0. Preview the
+formatting of an individual file from the project root without changing it:
+
+```sh
+uncrustify -q -c uncrustify.cfg -l CPP -f src/model/Agent.cpp
+```
+
+To format the file in place, use:
+
+```sh
+uncrustify -q -c uncrustify.cfg -l CPP --replace --no-backup src/model/Agent.cpp
+```
+
+The formatter preserves intentional blank lines within functions, but cannot
+determine where logical sections of a test should be separated. Add those blank
+lines when writing the test. CI checks formatting as an informational,
+non-blocking job.

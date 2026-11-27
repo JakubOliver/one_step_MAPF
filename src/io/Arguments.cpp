@@ -16,37 +16,37 @@ std::optional<Arguments> parseArguments(
     argparse::ArgumentParser program("MAPF");
 
     program.add_argument("map")
-        .help("path to the map file");
+    .help("path to the map file");
     program.add_argument("scenario")
-        .help("path to the scenario file");
+    .help("path to the scenario file");
     program.add_argument("--algorithm")
-        .default_value("PriorityPlanning");
+    .default_value("PriorityPlanning");
     program.add_argument("--fitness")
-        .default_value("manhattan")
-        .help("CSP fitness function");
+    .default_value("manhattan")
+    .help("CSP fitness function");
     program.add_argument("--distance")
-        .default_value("manhattan")
-        .help("CSP distance: manhattan, shortest-path, lazy-bfs, lazy-astar, astar or lazy-jps");
+    .default_value("manhattan")
+    .help("CSP distance: manhattan, shortest-path, lazy-bfs, lazy-astar, astar or lazy-jps");
     program.add_argument("--memory-size")
-        .default_value(0)
-        .scan<'i', int>()
-        .help("CSP recent-position memory size (0 disables memory)");
+    .default_value(0)
+    .scan<'i', int>()
+    .help("CSP recent-position memory size (0 disables memory)");
     program.add_argument("--memory-penalty")
-        .default_value(1)
-        .scan<'i', int>()
-        .help("CSP penalty for moving to a remembered position");
+    .default_value(1)
+    .scan<'i', int>()
+    .help("CSP penalty for moving to a remembered position");
     program.add_argument("--prevent-immediate-return")
-        .default_value(false)
-        .implicit_value(true)
-        .help("CSP forbids returning to the previous position immediately");
+    .default_value(false)
+    .implicit_value(true)
+    .help("CSP forbids returning to the previous position immediately");
     program.add_argument("--visualize")
-        .default_value(false)
-        .implicit_value(true);
+    .default_value(false)
+    .implicit_value(true);
     program.add_argument("--output")
-        .default_value(AGENT_PATH_FILE_NAME);
+    .default_value(AGENT_PATH_FILE_NAME);
     program.add_argument("--validate")
-        .default_value(false)
-        .implicit_value(true);
+    .default_value(false)
+    .implicit_value(true);
 
     try {
         program.parse_args(argc, argv);

@@ -84,7 +84,8 @@ TEST_P(CSPIntegrationTest, FindsValidPathsForFiftyAgents) {
 
     const auto paths = csp->resolve(map, scenarios);
     const auto [partial_valid, partial_error] = Validator::validatePartial(map, scenarios, paths);
-    EXPECT_TRUE(partial_valid) << "Invalid paths: " << partial_error.value_or("Unknown validation error");
+    EXPECT_TRUE(partial_valid) << "Invalid paths: " <<
+        partial_error.value_or("Unknown validation error");
 
     const auto [complete, completion_error] = Validator::validate(map, scenarios, paths);
     if (config.require_completion) {
@@ -108,8 +109,8 @@ INSTANTIATE_TEST_SUITE_P(
             }
         }
         return name + (info.param.memory_size ? "_Memory" : "_NoMemory") +
-            (info.param.prevent_return ? "_PreventReturn" : "_AllowReturn") +
-            (info.param.require_completion ? "_RequiresCompletion" : "_CompletionOptional");
+               (info.param.prevent_return ? "_PreventReturn" : "_AllowReturn") +
+               (info.param.require_completion ? "_RequiresCompletion" : "_CompletionOptional");
     }
 );
 

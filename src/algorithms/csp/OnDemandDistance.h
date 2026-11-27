@@ -12,7 +12,11 @@
 
 class OnDemandDistance {
 public:
-    OnDemandDistance(const Map& map, const std::vector<Scenario>& scenarios, const std::string& method);
+    OnDemandDistance(
+        const Map& map,
+        const std::vector<Scenario>& scenarios,
+        const std::string& method
+    );
     int64_t distance(AgentCord position, AgentCord goal);
 
 private:

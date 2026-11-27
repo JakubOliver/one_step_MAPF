@@ -44,7 +44,7 @@ struct Group {
                 stagnant += agent.stagnation() > 10;
             }
         }
-        
+
         return active > 0 && 100.0 * stagnant >= percentage * active;
     }
 
@@ -67,6 +67,5 @@ public:
         const Map& map
     );
 };
-
 
 #endif //MAPF_GROUPING_H

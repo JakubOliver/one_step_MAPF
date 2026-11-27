@@ -22,5 +22,4 @@ public:
     );
 };
 
-
 #endif //MAPF_EXPORTER_H

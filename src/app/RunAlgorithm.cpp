@@ -31,13 +31,15 @@ std::vector<AgentPath> runAlgorithm(
     // Preserve the original shortest-path fitness as an alias for linear cost.
     const bool shortest_path_alias = arguments.fitness == "shortest-path";
     const auto& fitness_name = shortest_path_alias ? std::string("manhattan") : arguments.fitness;
-    const auto& distance_name = shortest_path_alias ? std::string("shortest-path") : arguments.distance;
+    const auto& distance_name =
+        shortest_path_alias ? std::string("shortest-path") : arguments.distance;
     Fitness::FitnessFunction fitness;
     Fitness::DistanceFunction distance = Fitness::manhattanDistance;
     if (distance_name == "manhattan") {
         fitness = Fitness::getFitness(fitness_name, distance);
     } else if (distance_name == "shortest-path" || distance_name == "lazy-bfs" ||
-               distance_name == "lazy-astar" || distance_name == "astar" || distance_name == "lazy-jps") {
+               distance_name == "lazy-astar" || distance_name == "astar" ||
+               distance_name == "lazy-jps") {
         const auto method = distance_name == "shortest-path" ? "bfs" : distance_name;
         distance = Fitness::shortestPathDistance(map, scenarios, method);
         fitness = Fitness::getFitness(fitness_name, distance);

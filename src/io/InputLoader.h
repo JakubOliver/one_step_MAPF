@@ -22,5 +22,4 @@ public:
     );
 };
 
-
 #endif //MAPF_INPUTLOADER_H
