@@ -658,6 +658,44 @@ TEST_F(CSPTest, MemoryIsUsedAcrossCspIterations) {
     EXPECT_EQ(paths[0].getPathAtTime(2), AgentCord(2, 0));
 }
 
+TEST_F(CSPTest, StagnationPersistsAcrossCompletedIterations) {
+    const Map map{
+        .type = "test",
+        .height = 1,
+        .width = 2,
+        .map = {{{0, 0}, false}, {{1, 0}, false}}
+    };
+    const std::vector<Scenario> scenarios = {{
+        .startX = 0, .startY = 0, .goalX = 1, .goalY = 0
+    }};
+
+    std::vector<std::size_t> observed;
+    const auto fitness = [&observed](const Map&, const std::vector<Agent>&, const Agent& agent,
+                                     bool staying) -> int64_t {
+        if (staying) {
+            observed.push_back(agent.stagnation());
+        }
+
+        return staying ? 0 : 1;
+    };
+
+    std::size_t checks = 0;
+    std::size_t distance_calls = 0;
+    const auto distance = [&distance_calls](const Agent& agent) -> uint64_t {
+        ++distance_calls;
+        return Fitness::manhattanDistance(agent);
+    };
+
+    CSP csp(fitness, [&checks] {
+                return checks++ >= 3;
+            }, distance);
+
+    csp.resolve(map, scenarios);
+
+    EXPECT_EQ(observed, (std::vector<std::size_t>{0, 1, 2}));
+    EXPECT_EQ(distance_calls, 4);
+}
+
 TEST(CSPFitnessTest, NonlinearFitnessCostsAndWaitPenalties) {
     const Map map{
         .type = "test",

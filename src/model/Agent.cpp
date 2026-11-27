@@ -34,6 +34,15 @@ Agent::Agent(
 Agent::Agent(AgentCord pos, AgentCord g)
     : position(pos), goal(g), id(nextId++) {}
 
+void Agent::updateStagnation(std::uint64_t distance, bool left_goal) {
+    if (!best_distance || left_goal || distance < *best_distance) {
+        best_distance = distance;
+        stagnation_count = 0;
+    } else if (!isAtGoal() && stagnation_count < std::numeric_limits<std::size_t>::max()) {
+        ++stagnation_count;
+    }
+}
+
 std::generator<AgentCord> Agent::getNeighbors() const {
     auto [x, y] = position;
 
