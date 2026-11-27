@@ -94,6 +94,69 @@ initialization alone can favor lazy methods because work is deferred; the
 ``algorithm`` benchmark includes that deferred work.
 
 
+Two-room corridor fixtures
+--------------------------
+
+``benchmarks/corridors/generate.py`` creates twelve deterministic Moving AI
+map/scenario pairs. Each map has two 5-by-7 rooms joined by a straight passage. The passages
+are 4, 8, 16, 20, 25 or 30 cells long and 1 or 2 cells wide. ``short-one-way`` starts all
+agents in the left room; the other cases alternate starts between both rooms,
+with each goal mirrored into the opposite room. The first 2, 4 or 8 rows therefore
+provide balanced opposing traffic (except in the one-way control). Starts and
+goals are unique, and scenario distances are computed with a four-neighbor BFS.
+Generated fixtures are stored in the Git-ignored
+``benchmarks/corridors/generated-corridor-benchmark`` directory.
+
+Run from the repository root, without downloading external data:
+
+.. code-block:: console
+
+   cmake --build out/build/release --target benchmark
+   ./out/build/release/benchmark corridors 2 5
+   ./out/build/release/benchmark corridors 4 5
+   ./out/build/release/benchmark corridors 8 5
+
+Missing fixtures, or fixtures older than the generator, are generated automatically
+using ``python3``. The optional
+arguments default to eight agents and a 30-second cooperative timeout per case.
+The first argument may be between 1 and 8; even values keep opposing traffic
+balanced. Repeat runs:
+solver tie choices can affect completion. ``completed`` means that the final
+paths passed validation; ``timeout`` means only that the case did not complete
+within that run's time limit. The benchmark does not currently report whether
+the corridor rule activated, makespan, partial progress or a comparison with the
+rule disabled. Consequently these results characterize the whole solver, not the
+isolated effect of the rule. The two-cell-wide passages also provide a useful
+control: interior cells have only one adjacent wall and do not meet the current
+corridor-cell definition.
+
+Exploratory run on 2026-11-27: Release build, BFS distances, memory size 5,
+penalty 1. Each of the six original 2-agent and 4-agent cases completed once with a
+2-second limit.
+For 8 agents, three additional runs with a 5-second limit produced:
+
+==================  =====================
+Case                Completed runs (of 3)
+==================  =====================
+short-one-way       1
+short-opposing      2
+medium-opposing     1
+long-opposing       3
+medium-wide         3
+long-wide           3
+==================  =====================
+
+This small sample suggests sensitivity to the solver's choices, including in a
+one-way case; it does not establish the cause of any timeout or a monotonic
+relationship between passage length and difficulty. More repetitions, path
+metrics and an instrumented comparison with the corridor rule disabled are
+needed before attributing an effect to the rule.
+
+After adding the 20-, 25- and 30-cell passages, one exploratory run with a
+2-second limit completed all twelve cases with 2 agents and also with 8 agents.
+This is a single run per configuration, not an estimate of reliability.
+
+
 Recorded results from issue #19
 -------------------------------
 

@@ -314,3 +314,35 @@ therefore move work into the solving phase. JPS can skip symmetric positions
 in point searches, but this does not automatically produce a complete distance
 field. The experimental JPS implementation still needs the verification tracked
 in `issue #33 <https://github.com/JakubOliver/one_step_MAPF/issues/33>`_.
+
+Stagnation and straight corridors
+--------------------------------
+
+CSP tracks each agent's best distance to its goal using the configured distance
+function. After initialization, a step that does not improve this best distance
+increments its stagnation counter; improvement resets it. An agent at its goal
+is not counted as stagnant, and leaving a goal resets its baseline. An active
+agent is considered stagnant after more than ten such steps. The group percentage
+uses only agents outside their goals; an entirely finished group is not stagnant.
+
+A cell is considered a corridor cell when at least two of its four neighbors are
+walls or outside the map. The group corridor percentage includes all its agents,
+including those at goals. When at least 80% of the active agents are stagnant and
+at least 80% of the whole group occupy corridor cells, CSP may select a corridor
+rule. For now at least 80% of the whole group must occupy straight cells of the
+same orientation, with open cells in both directions along that axis. Corners,
+dead ends and mixed orientations do not initiate this rule.
+
+Each agent votes according to the sign of its goal displacement along that axis;
+agents with no displacement along it abstain. Ties use the order up, right, down,
+left. CSP first maximizes the number of moves in the selected direction, then
+minimizes the usual fitness among equally progressive solutions. Opposite moves
+are excluded; waiting and sideways moves remain possible. The normal vertex and
+swap constraints and optional memory restrictions still apply.
+
+The decision travels with agents when groups are rebuilt. A split inherits it;
+when groups with different decisions merge, the decision held by the agent with
+the lowest ID wins. The decision is cleared when fewer than 80% of the resulting
+group occupy corridor cells. This local rule does not guarantee escape or solve
+unsolvable instances. In particular, L-shaped corridors need a path-aware rule
+for updating the agreed direction and distance at bends; this remains future work.

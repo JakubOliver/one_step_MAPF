@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -99,8 +100,16 @@ void printHelp(std::ostream& output, const std::string& command) {
         output << "Usage: benchmark <command> [arguments]\n\n"
                << "Commands:\n"
                << "  preprocessing  Measure preprocessing only\n"
-               << "  algorithm      Measure preprocessing and CSP together\n\n"
+               << "  algorithm      Measure preprocessing and CSP together\n"
+               << "  corridors      Run the two-room corridor cases\n\n"
                << "Use benchmark <command> --help for command details.\n";
+    } else if (command == "corridors") {
+        output << "Usage: benchmark corridors [agents-per-map] [timeout-seconds]\n\n"
+               << "Runs the two-room corridor cases with BFS distances and CSP memory size 5, penalty 1.\n"
+               << "Defaults: 8 agents and 30 seconds per case; choose 2, 4 or 8 for balanced traffic.\n"
+               << "Run from the repository root. Missing or outdated fixtures are generated with python3.\n"
+               << "The timeout is cooperative; results are CSV on stdout and summary on stderr.\n";
+        return;
     } else if (command == "preprocessing") {
         output <<
             "Usage: benchmark preprocessing <bfs|lazy-bfs|lazy-astar|astar|lazy-jps> <input-list> [agents-per-map]\n\n"
@@ -142,7 +151,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string command = argv[1];
-    if (command != "preprocessing" && command != "algorithm") {
+    if (command != "preprocessing" && command != "algorithm" && command != "corridors") {
         std::cerr << "Unknown benchmark: " << command << '\n';
         printHelp(std::cerr, "");
         return 1;
@@ -151,21 +160,43 @@ int main(int argc, char** argv) {
         printHelp(std::cout, command);
         return 0;
     }
-    const bool run_algorithm = command == "algorithm";
-    if (argc < 4 || argc > (run_algorithm ? 6 : 5)) {
+    const bool corridor_benchmark = command == "corridors";
+    const bool run_algorithm = command == "algorithm" || corridor_benchmark;
+    if (corridor_benchmark ? argc > 4 : (argc < 4 || argc > (run_algorithm ? 6 : 5))) {
         printHelp(std::cerr, command);
         return 1;
     }
 
     try {
-        const std::string method = argv[2];
+        const std::string method = corridor_benchmark ? "bfs" : argv[2];
         if (method != "bfs" && method != "lazy-bfs" && method != "lazy-astar" &&
             method != "astar" && method != "lazy-jps" && !(run_algorithm && method == "none")) {
             throw std::invalid_argument("Unknown preprocessing method: " + method);
         }
-        const auto inputs = readInputs(argv[3]);
-        const auto agent_count = argc >= 5 ? positiveNumber(argv[4], "Agent count") : 10;
-        const auto timeout = argc >= 6 ? positiveNumber(argv[5], "Timeout") : 30;
+        const std::string corridor_inputs =
+            "benchmarks/corridors/generated-corridor-benchmark/inputs.txt";
+        const std::filesystem::path corridor_generator = "benchmarks/corridors/generate.py";
+        if (corridor_benchmark && (!std::filesystem::is_regular_file(corridor_inputs) ||
+            (std::filesystem::is_regular_file(corridor_generator) &&
+             std::filesystem::last_write_time(corridor_generator) >
+                 std::filesystem::last_write_time(corridor_inputs)))) {
+            std::cerr << "Generating corridor benchmark fixtures with python3\n";
+            if (std::system("python3 benchmarks/corridors/generate.py") != 0) {
+                throw std::runtime_error(
+                    "Could not generate corridor fixtures; run from the repository root with python3 installed"
+                );
+            }
+        }
+        const auto inputs = readInputs(corridor_benchmark ? corridor_inputs : argv[3]);
+        const auto agent_count = corridor_benchmark
+            ? (argc >= 3 ? positiveNumber(argv[2], "Agent count") : 8)
+            : (argc >= 5 ? positiveNumber(argv[4], "Agent count") : 10);
+        if (corridor_benchmark && agent_count > 8) {
+            throw std::invalid_argument("Corridor scenarios contain at most 8 agents");
+        }
+        const auto timeout = corridor_benchmark
+            ? (argc >= 4 ? positiveNumber(argv[3], "Timeout") : 30)
+            : (argc >= 6 ? positiveNumber(argv[5], "Timeout") : 30);
         if (timeout > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
             throw std::invalid_argument("Timeout is too large");
         }

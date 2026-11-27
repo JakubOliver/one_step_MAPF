@@ -12,3 +12,6 @@ agents.csv
 
 # Downloaded benchmark data
 /data/
+
+# Generated fixtures for the two-room corridor benchmark only
+/benchmarks/corridors/generated-corridor-benchmark/
