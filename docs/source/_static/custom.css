@@ -1,0 +1,17 @@
+/* Keep balanced outer margins on wide screens. */
+@media (min-width: 82.01em) {
+  .page {
+    margin: 0 10%;
+  }
+
+  .sidebar-drawer {
+    width: 17em;
+  }
+
+  .content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 2em;
+    width: auto;
+  }
+}
