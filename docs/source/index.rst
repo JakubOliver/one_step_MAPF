@@ -20,6 +20,7 @@ paths that can be checked by the validator and exported for visualization.
    algorithms
    how-it-works
    research-progress
+   research-questions
    gallery
    approaches
    benchmarks

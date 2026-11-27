@@ -2,11 +2,14 @@ Research progress and open questions
 ====================================
 
 This is a working research diary, based on the repository history, GitHub
-issues and pull requests, and notes from consultations 2–4. It records the
+issues and pull requests, notes from consultations 2–4, earlier project
+conversations and the 26 November research consultation brief. It records the
 state of the main branch and historical observations as of 27 November 2026.
 A historical run is evidence about that run, not a guarantee for the current
 implementation. See :doc:`how-it-works` for the current algorithm and
 :doc:`benchmarks` for the recorded benchmark methodology and raw results.
+The discussion of mechanisms and experiment design continues in
+:doc:`research-questions`.
 
 Milestones
 ----------
@@ -85,6 +88,14 @@ Related implementation: `bounded memory
 <https://github.com/JakubOliver/one_step_MAPF/commit/d6543e9>`_ and `shortest-path
 distances <https://github.com/JakubOliver/one_step_MAPF/commit/f7445eb>`_.
 
+An earlier debugging conversation documented 66/99 agents at their goals
+after 15 seconds with Manhattan distance and 95/99 in a later interrupted
+shortest-path run. These were individual historical runs, not a controlled
+experiment. The first reproduction attributed one observed stall to a wall:
+the necessary detour initially increased Manhattan distance. Both runs still
+left agents outside their goals. See `issue #13
+<https://github.com/JakubOliver/one_step_MAPF/issues/13>`_.
+
 **Next question.** Measure success rates across maps, agent densities and memory
 settings, and distinguish deadlocks from timeouts and long runs. The separate
 `corridor deadlock issue <https://github.com/JakubOliver/one_step_MAPF/issues/14>`_
@@ -136,6 +147,24 @@ Related commits: `shortest-path precomputation
 <https://github.com/JakubOliver/one_step_MAPF/commit/f7445eb>`_ and `benchmark
 and distance strategies <https://github.com/JakubOliver/one_step_MAPF/commit/9848ac9>`_.
 
+The earlier discussions also expose an important experimental detour. An
+intermediate eager A* implementation ran a separate point-to-point search
+for every cell and goal. On the 32×32 empty map with 50 goals this meant about
+51,000 searches rather than 50 reverse traversals; the reported preprocessing
+times were roughly 2.6 seconds and 15 milliseconds respectively. This
+compared different amounts of repeated work, not the inherent speed of a
+single A* against BFS. The final ``astar`` instead computes each full field
+with one priority-queue traversal and a zero heuristic: it is Dijkstra's
+algorithm, not goal-directed A*. Lazy A* remains a point-query strategy. These
+historical measurements are illustrative, not a benchmark of the current code.
+
+Another distinction from that discussion is that lazy initialization still
+validates start-to-goal connectivity, even though it defers distance queries.
+Thus neither initialization nor the full run is automatically free of
+preprocessing. Historical commands and names changed during the experiment;
+the exact context is recorded in :doc:`benchmarks` and `issue #19
+<https://github.com/JakubOliver/one_step_MAPF/issues/19>`_.
+
 Grouping and CSP overhead
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -150,6 +179,26 @@ appropriate group-size threshold (`issue #27
 Related commits: `single-agent optimization
 <https://github.com/JakubOliver/one_step_MAPF/commit/999fd50>`_ and `completed
 groups <https://github.com/JakubOliver/one_step_MAPF/commit/c18b6d5>`_.
+
+Testing correctness and completion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While integrating the grouping changes, an early local run tested 48
+configurations on one fixed empty-map scenario with a limit of 200 iterations.
+Ten completed and 38 did not; after partial validation was added, all 48
+produced valid partial paths in a subsequent run. These were historical test
+runs, not a comparative success-rate study: they cover one scenario, and a
+limit or random choices affect outcomes. The distinction prompted separate
+checks for collision-free partial paths and completion. See `PR #30
+<https://github.com/JakubOliver/one_step_MAPF/pull/30>`_.
+
+An iteration limit lets a test finish and validate the partial paths. A
+process timeout can stop the test before validation, so the two limits answer
+different questions. The current CI runs integration configurations marked as
+requiring completion; the full set, including configurations where completion
+is optional, can be run locally as described in the README. A passing CI run
+therefore does not establish that every supported configuration completes on
+every scenario.
 
 Further research
 ----------------
