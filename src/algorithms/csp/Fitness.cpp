@@ -8,9 +8,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace {
-
-uint64_t manhattanDistance(const Agent& agent) {
+uint64_t Fitness::manhattanDistance(const Agent& agent) {
     const auto difference = [](std::size_t first, std::size_t second) {
         return first > second ? first - second : second - first;
     };
@@ -21,6 +19,8 @@ uint64_t manhattanDistance(const Agent& agent) {
     }
     return static_cast<uint64_t>(dx) + static_cast<uint64_t>(dy);
 }
+
+namespace {
 
 int64_t linearCost(uint64_t distance, bool staying) {
     constexpr auto max_distance = (std::numeric_limits<int64_t>::max() - 1) / 2;
@@ -85,7 +85,7 @@ int64_t RandomFitness::operator()(
     const Agent& agent,
     bool is_staying
 ) {
-    return evaluate(manhattanDistance(agent), is_staying);
+    return evaluate(Fitness::manhattanDistance(agent), is_staying);
 }
 
 Fitness::DistanceFunction Fitness::shortestPathDistance(

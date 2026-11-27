@@ -40,6 +40,7 @@ using FitnessFunction = std::function<int64_t(
 )>;
 using DistanceFunction = std::function<uint64_t(const Agent&)>;
 
+uint64_t manhattanDistance(const Agent& agent);
 FitnessFunction getFitness(const std::string& name);
 FitnessFunction getFitness(const std::string& name, DistanceFunction distance);
 DistanceFunction shortestPathDistance(const Map& map, const std::vector<Scenario>& scenarios);

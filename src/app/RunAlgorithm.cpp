@@ -33,15 +33,14 @@ std::vector<AgentPath> runAlgorithm(
     const auto& fitness_name = shortest_path_alias ? std::string("manhattan") : arguments.fitness;
     const auto& distance_name = shortest_path_alias ? std::string("shortest-path") : arguments.distance;
     Fitness::FitnessFunction fitness;
+    Fitness::DistanceFunction distance = Fitness::manhattanDistance;
     if (distance_name == "manhattan") {
-        fitness = Fitness::getFitness(fitness_name);
+        fitness = Fitness::getFitness(fitness_name, distance);
     } else if (distance_name == "shortest-path" || distance_name == "lazy-bfs" ||
                distance_name == "lazy-astar" || distance_name == "astar" || distance_name == "lazy-jps") {
         const auto method = distance_name == "shortest-path" ? "bfs" : distance_name;
-        fitness = Fitness::getFitness(
-            fitness_name,
-            Fitness::shortestPathDistance(map, scenarios, method)
-        );
+        distance = Fitness::shortestPathDistance(map, scenarios, method);
+        fitness = Fitness::getFitness(fitness_name, distance);
     } else {
         throw std::invalid_argument("Unknown CSP distance: " + distance_name);
     }
@@ -49,7 +48,7 @@ std::vector<AgentPath> runAlgorithm(
         return interrupt_handler.wasInterrupted();
     };
     if (arguments.memory_size == 0 && !arguments.prevent_immediate_return) {
-        return CSP(std::move(fitness), interrupted).resolve(map, scenarios);
+        return CSP(std::move(fitness), interrupted, std::move(distance)).resolve(map, scenarios);
     }
 
     return CSP(
@@ -59,7 +58,8 @@ std::vector<AgentPath> runAlgorithm(
             static_cast<std::size_t>(arguments.memory_size),
             arguments.memory_size == 0 ? 0 : arguments.memory_penalty,
             arguments.prevent_immediate_return
-        }
+        },
+        std::move(distance)
     ).resolve(map, scenarios);
 }
 

@@ -10,8 +10,10 @@
 #include <array>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <generator>
 #include <iosfwd>
+#include <optional>
 #include <utility>
 
 using AgentId = std::size_t;
@@ -27,6 +29,9 @@ public:
     AgentCord position;
     AgentCord goal;
     const AgentId id;
+
+    void updateStagnation(std::uint64_t distance, bool left_goal = false);
+    std::size_t stagnation() const { return stagnation_count; }
 
     Agent(std::size_t x, std::size_t y);
     Agent(
@@ -45,6 +50,10 @@ public:
     bool isAtGoal() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Agent& agent);
+
+private:
+    std::optional<std::uint64_t> best_distance;
+    std::size_t stagnation_count = 0;
 };
 
 #endif //MAPF_AGENT_H

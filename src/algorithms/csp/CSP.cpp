@@ -37,10 +37,11 @@ CSP::CSP(std::function<bool()> interruption_requested)
 
 CSP::CSP(
     FitnessFunction fitness,
-    std::function<bool()> interruption_requested
+    std::function<bool()> interruption_requested,
+    Fitness::DistanceFunction distance
 )
     : interruption_requested(std::move(interruption_requested)),
-      fitness(std::move(fitness)) {
+      fitness(std::move(fitness)), distance(std::move(distance)) {
     if (!this->fitness) {
         throw std::invalid_argument(
             "CSP fitness function must be provided"
@@ -52,13 +53,17 @@ CSP::CSP(
             "CSP interruption callback must be provided"
         );
     }
+    if (!this->distance) {
+        throw std::invalid_argument("CSP distance function must be provided");
+    }
 }
 
 CSP::CSP(
     FitnessFunction fitness,
     std::function<bool()> interruption_requested,
-    MemoryOptions memory
-) : CSP(std::move(fitness), std::move(interruption_requested)) {
+    MemoryOptions memory,
+    Fitness::DistanceFunction distance
+) : CSP(std::move(fitness), std::move(interruption_requested), std::move(distance)) {
     if ((memory.capacity == 0 && (!memory.prevent_immediate_return || memory.penalty != 0)) ||
         (memory.capacity > 0 && memory.penalty <= 0)) {
         throw std::invalid_argument("Invalid CSP memory configuration");
@@ -389,6 +394,8 @@ std::vector<AgentPath> CSP::resolveTyped(
         };
         const auto [agent_it, inserted] = agents.emplace(start, make_agent());
 
+        agent_it->second.updateStagnation(distance(agent_it->second));
+
         agent_indices.emplace(agent_it->first, i);
         paths[i].push_back(start);
     }
@@ -441,7 +448,11 @@ std::vector<AgentPath> CSP::resolveTyped(
 
             for (std::size_t i = 0; i < group.agents.size(); ++i) {
                 const auto agent_index = agent_indices.at(group.agents[i].position);
-                const auto& processed_agent = processed_group[i];
+                auto processed_agent = processed_group[i];
+                processed_agent.updateStagnation(
+                    distance(processed_agent),
+                    group.agents[i].isAtGoal() && !processed_agent.isAtGoal()
+                );
 
                 const auto [agent_it, inserted] = updated_agents.emplace(
                     processed_agent.position,
